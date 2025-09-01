@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBot Menu - Teste</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .menu-item {
+            margin: 10px 0;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .menu-item:hover {
+            background: #bbdefb;
+        }
+        .response {
+            margin: 10px 0;
+            padding: 15px;
+            background: #f3e5f5;
+            border-radius: 5px;
+        }
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1565c0;
+        }
+        .error {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ChatBot Menu - Teste</h1>
+        <div id="chat-container">
+            <button onclick="startChat()">Iniciar Conversação</button>
+            <div id="menu-display"></div>
+            <div id="response-display"></div>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = null;
+        let currentMenu = null;
+
+        async function startChat() {
+            try {
+                const response = await fetch('/rest/v1/chat/start');
+                const data = await response.json();
+                sessionId = data.sessionId;
+                currentMenu = data.currentMenu;
+                displayMenu(currentMenu);
+            } catch (error) {
+                displayError('Erro ao iniciar conversação: ' + error.message);
+            }
+        }
+
+        async function chooseOption(optionId) {
+            if (!sessionId) return;
+            
+            try {
+                const response = await fetch(`/rest/v1/chat/choose?sessionId=${sessionId}&optionId=${optionId}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentMenu = data.nextMenu;
+                    displayMenu(currentMenu);
+                } else {
+                    displayError('Erro: ' + data.error);
+                }
+            } catch (error) {
+                displayError('Erro ao processar escolha: ' + error.message);
+            }
+        }
+
+        function displayMenu(menu) {
+            const menuDisplay = document.getElementById('menu-display');
+            const responseDisplay = document.getElementById('response-display');
+            
+            if (!menu) {
+                menuDisplay.innerHTML = '<p>Conversa encerrada.</p>';
+                return;
+            }
+
+            let html = `<h3>${menu.title}</h3>`;
+            if (menu.description) {
+                html += `<p>${menu.description}</p>`;
+            }
+            
+            if (menu.type === 'INFORMATION') {
+                html += `<div class="response">${menu.description}</div>`;
+                if (menu.responseMessage) {
+                    html += `<div class="response">${menu.responseMessage}</div>`;
+                }
+                if (menu.nextNodeId) {
+                    html += `<button onclick="loadNextMenu('${menu.nextNodeId}')">Continuar</button>`;
+                }
+            } else {
+                html += '<div class="options">';
+                menu.options.forEach((option, index) => {
+                    html += `<div class="menu-item" onclick="chooseOption('${option.id}')">
+                        ${index + 1}. ${option.text}
+                    </div>`;
+                });
+                html += '</div>';
+            }
+            
+            menuDisplay.innerHTML = html;
+            responseDisplay.innerHTML = '';
+        }
+
+        async function loadNextMenu(nodeId) {
+            // Para simplificar, vamos reiniciar a conversação
+            await startChat();
+        }
+
+        function displayError(message) {
+            const responseDisplay = document.getElementById('response-display');
+            responseDisplay.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // Carregar menu inicial ao abrir a página
+        window.addEventListener('load', () => {
+            console.log('Aplicação carregada. Clique em "Iniciar Conversação" para começar.');
+        });
+    </script>
+</body>
+</html>

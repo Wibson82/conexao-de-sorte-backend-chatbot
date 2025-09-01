@@ -1,0 +1,8 @@
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :resolveMainClassName UP-TO-DATE
+> Task :bootRun
+
+BUILD SUCCESSFUL in 601ms
+4 actionable tasks: 1 executed, 3 up-to-date
