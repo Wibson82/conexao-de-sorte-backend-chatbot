@@ -1,8 +1,0 @@
-/Volumes/NVME/Projetos/conexao-de-sorte/Microservicos/conexao-de-sorte-chatbot/src/main/java/br/tec/facilitaservicos/chatbot/ChatbotApplication.java
-/Volumes/NVME/Projetos/conexao-de-sorte/Microservicos/conexao-de-sorte-chatbot/src/main/java/br/tec/facilitaservicos/chatbot/aplicacao/servico/CacheWarmingService.java
-/Volumes/NVME/Projetos/conexao-de-sorte/Microservicos/conexao-de-sorte-chatbot/src/main/java/br/tec/facilitaservicos/chatbot/config/CacheConfig.java
-/Volumes/NVME/Projetos/conexao-de-sorte/Microservicos/conexao-de-sorte-chatbot/src/main/java/br/tec/facilitaservicos/chatbot/config/OpenApiConfig.java
-/Volumes/NVME/Projetos/conexao-de-sorte/Microservicos/conexao-de-sorte-chatbot/src/main/java/br/tec/facilitaservicos/chatbot/config/R2dbcConfig.java
-/Volumes/NVME/Projetos/conexao-de-sorte/Microservicos/conexao-de-sorte-chatbot/src/main/java/br/tec/facilitaservicos/chatbot/configuracao/SecurityConfig.java
-/Volumes/NVME/Projetos/conexao-de-sorte/Microservicos/conexao-de-sorte-chatbot/src/main/java/br/tec/facilitaservicos/chatbot/domain/jogobicho/entities/ApostaR2dbc.java
-/Volumes/NVME/Projetos/conexao-de-sorte/Microservicos/conexao-de-sorte-chatbot/src/main/java/br/tec/facilitaservicos/chatbot/domain/jogobicho/repository/ApostaReactiveRepository.java
