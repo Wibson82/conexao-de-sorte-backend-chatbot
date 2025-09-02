@@ -23,12 +23,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         
         <!-- Dependências para documentação -->
-        <springdoc.version>2.8.11</springdoc.version>
+        <springdoc.version>2.7.0</springdoc.version>
         <logstash.version>8.1</logstash.version>
         
         <!-- Testcontainers -->
         <testcontainers.version>1.21.3</testcontainers.version>
-        <spring-cloud.version>2025.0.0</spring-cloud.version> <!-- Adicionado para compatibilidade com Spring Boot 3.5.5 -->
+        <spring-cloud.version>2023.0.3</spring-cloud.version> <!-- Versão estável compatível com Spring Boot 3.5.5 -->
     </properties>
 
     <dependencyManagement>
@@ -77,6 +77,18 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Spring Context (garantir que está explicitamente incluído) -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+
+        <!-- Jakarta Annotations (garantir que está explicitamente incluído) -->
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
+
         <!-- R2DBC Dependencies for Reactive Data Access -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -112,7 +124,6 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
-            <version>3.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.retry</groupId>
@@ -176,6 +187,13 @@
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Configuration Processor -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <!-- Jackson -->
@@ -258,14 +276,24 @@
                 <version>3.13.0</version>
                 <configuration>
                     <release>${java.version}</release>
-                    <jdkToolchain>
-                        <version>[24,)</version>
-                    </jdkToolchain>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                     <compilerArgs>
                         <arg>-Xlint:deprecation</arg>
                         <arg>-Xlint:unchecked</arg>
                         <arg>-parameters</arg>
+                        <arg>--add-opens</arg>
+                        <arg>java.base/java.lang=ALL-UNNAMED</arg>
+                        <arg>--add-opens</arg>
+                        <arg>java.base/java.util=ALL-UNNAMED</arg>
                     </compilerArgs>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-configuration-processor</artifactId>
+                            <version>3.5.5</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
 

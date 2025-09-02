@@ -13,7 +13,7 @@ spring:
     name: conexao-de-sorte-chatbot
     
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    active: ${SPRING_PROFILES_ACTIVE:prod}
   
   # Configtree secret management
   config:
@@ -317,8 +317,63 @@ logging:
     root: INFO
     br.tec.facilitaservicos.chatbot: INFO
     
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} [JOGO-BICHO] - %msg%n"
+    
   file:
-    name: /var/log/jogo-bicho/application.log
+    name: ./logs/jogo-bicho.log
     
 rate-limit:
   default-requests-per-minute: 15  # Mais restritivo em produção
+
+---
+# Local Development Profile (H2 Database)
+spring:
+  config:
+    activate:
+      on-profile: local
+      
+  r2dbc:
+    url: r2dbc:h2:mem:jogo_bicho_local;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    
+  flyway:
+    enabled: false  # Disable Flyway for local H2
+    
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8081/.well-known/jwks.json
+          issuer-uri: http://localhost:8081
+          
+jogo-bicho:
+  apostas:
+    valor-minimo: 0.50
+    limite-diario-usuario: 1000.00
+    horarios-permitidos: []  # Allow betting at any time for local development
+    
+  seguranca:
+    validacao-integridade: false
+    auditoria-apostas: false
+    
+server:
+  port: 8089
+  ssl:
+    enabled: false
+    
+springdoc:
+  swagger-ui:
+    enabled: true
+    
+logging:
+  level:
+    root: INFO
+    br.tec.facilitaservicos.chatbot: DEBUG
+    org.springframework.r2dbc: DEBUG
+    
+management:
+  endpoint:
+    health:
+      show-details: always
