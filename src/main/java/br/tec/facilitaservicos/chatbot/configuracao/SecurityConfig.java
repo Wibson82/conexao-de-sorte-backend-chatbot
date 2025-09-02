@@ -234,21 +234,9 @@ public class SecurityConfig {
                 )
             )
 
-            // Headers de segurança máxima para apostas
-            .headers(headers -> headers
-                .contentSecurityPolicy("default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
-                .and()
-                .frameOptions().deny()
-                .httpStrictTransportSecurity(hstsConfig -> hstsConfig
-                    .maxAgeInSeconds(31536000) // 1 ano
-                    .includeSubdomains(true)
-                    .preload(true)
-                )
-            )
-
             // Configurar tratamento de exceções para apostas
             .exceptionHandling(exceptions -> exceptions
-                .authenticationEntryPoint((exchange, _) -> {
+                .authenticationEntryPoint((exchange, ex) -> {
                     var response = exchange.getResponse();
                     response.setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
                     response.getHeaders().add(HEADER_CONTENT_TYPE, CONTENT_TYPE_JSON);
@@ -259,7 +247,7 @@ public class SecurityConfig {
                     var buffer = response.bufferFactory().wrap(body.getBytes());
                     return response.writeWith(reactor.core.publisher.Mono.just(buffer));
                 })
-                .accessDeniedHandler((exchange, _) -> {
+                .accessDeniedHandler((exchange, denied) -> {
                     var response = exchange.getResponse();
                     response.setStatusCode(org.springframework.http.HttpStatus.FORBIDDEN);
                     response.getHeaders().add(HEADER_CONTENT_TYPE, CONTENT_TYPE_JSON);

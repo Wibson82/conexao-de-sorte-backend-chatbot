@@ -1,0 +1,77 @@
+# Snyk (https://snyk.io) policy file
+# Arquivo de políticas de segurança para o projeto Conexão de Sorte - Chatbot
+version: v1.0.0
+
+# Configurações de ignorar vulnerabilidades específicas
+# Use apenas quando absolutamente necessário e com justificativa técnica
+ignore: {}
+
+# Exemplo de como ignorar uma vulnerabilidade específica:
+# ignore:
+#   SNYK-JAVA-ORGSPRINGFRAMEWORK-12345:
+#     - '*':
+#         reason: 'Vulnerabilidade em dependência transitiva do Spring Framework, mitigada por configuração de segurança personalizada'
+#         expires: '2024-12-31T23:59:59.999Z'
+#         created: '2024-01-15T10:30:00.000Z'
+#   SNYK-JAVA-COMFASTERXMLJACKSONCORE-67890:
+#     - '*':
+#         reason: 'Vulnerabilidade no Jackson Core, aguardando atualização upstream. Mitigação: validação rigorosa de entrada'
+#         expires: '2024-06-30T23:59:59.999Z'
+#         created: '2024-01-15T10:30:00.000Z'
+
+# Patches aplicados automaticamente pelo Snyk
+patches: {}
+
+# Configurações específicas do projeto
+project:
+  name: 'conexao-de-sorte-chatbot'
+  description: 'Sistema de apostas Jogo do Bicho com chatbot interativo e API REST reativa'
+  
+# Configurações de linguagem
+language-settings:
+  java:
+    # Versão mínima do Java suportada
+    version: '24'
+    # Configurações específicas para Maven
+    packageManager: 'maven'
+    
+# Configurações de severidade
+severity-threshold: 'high'
+
+# Configurações de monitoramento
+monitor:
+  # Frequência de verificação (em dias)
+  frequency: 7
+  # Notificações por email
+  notifications: true
+  
+# Configurações de relatórios
+reporting:
+  # Formato dos relatórios
+  format: ['json', 'html']
+  # Incluir dependências de desenvolvimento
+  include-dev-deps: false
+  
+# Configurações de exclusões por tipo de arquivo
+exclude:
+  # Excluir arquivos de teste das verificações de segurança
+  - 'src/test/**'
+  # Excluir arquivos de documentação
+  - '*.md'
+  # Excluir arquivos de configuração do IDE
+  - '.idea/**'
+  - '.vscode/**'
+  
+# Configurações de integração com CI/CD
+ci:
+  # Falhar o build em vulnerabilidades de alta severidade
+  fail-on: 'high'
+  # Timeout para verificações (em segundos)
+  timeout: 300
+  
+# Notas importantes:
+# 1. Sempre documente o motivo de ignorar uma vulnerabilidade
+# 2. Defina uma data de expiração para revisão
+# 3. Monitore regularmente as vulnerabilidades ignoradas
+# 4. Mantenha este arquivo atualizado com as políticas de segurança da organização
+# 5. Revise mensalmente as exceções e suas justificativas

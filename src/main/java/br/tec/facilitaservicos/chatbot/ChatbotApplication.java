@@ -1,6 +1,6 @@
 package br.tec.facilitaservicos.chatbot;
 
-import br.tec.facilitaservicos.chatbot.infrastructure.terminal.JogoBichoTerminalService;
+// JogoBichoTerminalService removido - funcionalidade migrada para R2DBC
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -28,20 +28,11 @@ public class ChatbotApplication {
 		// Sempre iniciar o Spring Boot para disponibilizar a API REST reativa
 		ConfigurableApplicationContext context = SpringApplication.run(ChatbotApplication.class, args);
 		
-		// Verificar se deve executar modo terminal jogo do bicho
-		if (args.length > 0 && "--jogo-bicho".equals(args[0])) {
-			System.out.println("🎰 INICIANDO SISTEMA DE APOSTAS - JOGO DO BICHO 🎰");
-			System.out.println("🔒 Modo seguro ativado - JWT necessário para operações críticas");
-			JogoBichoTerminalService terminalService = context.getBean(JogoBichoTerminalService.class);
-			terminalService.start();
-			System.exit(0);
-		} else {
-			System.out.println("🌐 SERVIDOR WEB REATIVO INICIADO - API REST DISPONÍVEL 🌐");
-			System.out.println("Acesso: http://localhost:8089");
-			System.out.println("Documentação: http://localhost:8089/swagger-ui.html");
-			System.out.println("Métricas: http://localhost:8089/actuator/prometheus");
-			System.out.println("Para modo terminal: java -jar app.jar --jogo-bicho");
-			System.out.println("🔐 Sistema seguro - Autenticação JWT obrigatória");
-		}
+		// Modo terminal removido - usando apenas API REST reativa
+		System.out.println("🌐 SERVIDOR WEB REATIVO INICIADO - API REST DISPONÍVEL 🌐");
+		System.out.println("Acesso: http://localhost:8089");
+		System.out.println("🔒 Autenticação JWT necessária para operações de apostas");
+		System.out.println("Documentação: http://localhost:8089/swagger-ui.html");
+		System.out.println("Métricas: http://localhost:8089/actuator/prometheus");
 	}
 }

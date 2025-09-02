@@ -67,8 +67,8 @@ public class CacheConfig {
                 .transactionAware()
                 .build();
 
-        // Registrar métricas de cache personalizadas
-        return new RedisCacheMetrics(cacheManager, meterRegistry, applicationName).instrumentedCacheManager();
+        // Métricas de cache são automaticamente registradas pelo Spring Boot Actuator
+        return cacheManager;
     }
 
     @Bean

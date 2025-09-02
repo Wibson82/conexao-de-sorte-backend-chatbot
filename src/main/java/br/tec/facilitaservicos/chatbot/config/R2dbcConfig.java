@@ -1,10 +1,6 @@
 
 package br.tec.facilitaservicos.chatbot.config;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.binder.r2dbc.ConnectionPoolMetrics;
-import java.util.Collections;
-
 import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.spi.ConnectionFactories;
@@ -47,7 +43,7 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
 
     @Override
     @Bean
-    public ConnectionFactory connectionFactory(MeterRegistry meterRegistry) {
+    public ConnectionFactory connectionFactory() {
         ConnectionFactoryOptions options = ConnectionFactoryOptions.parse(url)
                 .mutate()
                 .option(ConnectionFactoryOptions.USER, username)
@@ -63,9 +59,7 @@ public class R2dbcConfig extends AbstractR2dbcConfiguration {
                 .validationQuery(validationQuery)
                 .build();
 
-        ConnectionPool connectionPool = new ConnectionPool(poolConfiguration);
-        new ConnectionPoolMetrics(connectionPool, "r2dbc.pool", Collections.emptyList()).bindTo(meterRegistry);
-        return connectionPool;
+        return new ConnectionPool(poolConfiguration);
     }
 
     @Bean

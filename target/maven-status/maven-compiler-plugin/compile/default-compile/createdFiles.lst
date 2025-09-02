@@ -1,0 +1,9 @@
+br/tec/facilitaservicos/chatbot/domain/jogobicho/entities/ApostaR2dbc.class
+br/tec/facilitaservicos/chatbot/config/R2dbcConfig.class
+br/tec/facilitaservicos/chatbot/ChatbotApplication.class
+br/tec/facilitaservicos/chatbot/aplicacao/servico/CacheWarmingService.class
+br/tec/facilitaservicos/chatbot/domain/jogobicho/repository/ApostaReactiveRepository.class
+br/tec/facilitaservicos/chatbot/configuracao/SecurityConfig$CustomJwtGrantedAuthoritiesConverter.class
+br/tec/facilitaservicos/chatbot/config/OpenApiConfig.class
+br/tec/facilitaservicos/chatbot/config/CacheConfig.class
+br/tec/facilitaservicos/chatbot/configuracao/SecurityConfig.class

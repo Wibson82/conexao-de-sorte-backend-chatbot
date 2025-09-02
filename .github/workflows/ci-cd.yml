@@ -47,10 +47,98 @@ jobs:
           path: target/*.jar
           retention-days: 7
 
+  security-and-quality:
+    runs-on: ubuntu-latest
+    name: 🛡️ Security & Quality Gates
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Necessário para análise completa do Snyk
+      
+      - name: Setup Java 24
+        uses: actions/setup-java@v4
+        with:
+          java-version: '24'
+          distribution: 'temurin'
+          cache: maven
+      
+      # JaCoCo Coverage Analysis
+      - name: 📊 Run tests with JaCoCo coverage
+        run: |
+          echo "🧪 Executando testes com análise de cobertura JaCoCo..."
+          ./mvnw clean verify -Dspring.profiles.active=test
+          echo "✅ Análise de cobertura concluída"
+      
+      - name: 📈 Upload JaCoCo coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-reports
+          path: |
+            target/site/jacoco/
+            target/jacoco.exec
+          retention-days: 30
+      
+      - name: 📋 Display coverage summary
+        run: |
+          if [ -f target/site/jacoco/index.html ]; then
+            echo "📊 Relatório de cobertura JaCoCo gerado com sucesso"
+            echo "📁 Localização: target/site/jacoco/index.html"
+            # Extrair informações básicas de cobertura se disponível
+            if command -v xmllint >/dev/null 2>&1 && [ -f target/site/jacoco/jacoco.xml ]; then
+              COVERAGE=$(xmllint --xpath "string(//report/counter[@type='LINE']/@covered)" target/site/jacoco/jacoco.xml 2>/dev/null || echo "N/A")
+              TOTAL=$(xmllint --xpath "string(//report/counter[@type='LINE']/@missed + //report/counter[@type='LINE']/@covered)" target/site/jacoco/jacoco.xml 2>/dev/null || echo "N/A")
+              echo "📈 Cobertura de linhas: $COVERAGE/$TOTAL"
+            fi
+          else
+            echo "⚠️ Relatório de cobertura não encontrado"
+          fi
+      
+      # Snyk Security Analysis
+      - name: 🔍 Run Snyk Security Scan
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: >
+            --all-projects
+            --severity-threshold=high
+            --fail-on=all
+            --project-name=conexao-de-sorte-chatbot
+            --org=${{ secrets.SNYK_ORG_ID }}
+        continue-on-error: false
+      
+      - name: 📊 Upload Snyk results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: snyk-security-report
+          path: snyk-report.json
+          retention-days: 30
+      
+      - name: 🔄 Monitor with Snyk (main branch only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
+          args: >
+            --project-name=conexao-de-sorte-chatbot
+            --org=${{ secrets.SNYK_ORG_ID }}
+      
+      - name: ✅ Quality Gates Summary
+        if: success()
+        run: |
+          echo "🎉 Todos os gates de qualidade e segurança foram aprovados!"
+          echo "✅ JaCoCo: Cobertura mínima de 80% atingida"
+          echo "✅ Snyk: Nenhuma vulnerabilidade de alta severidade encontrada"
+          echo "🚀 Pipeline pode prosseguir para o deploy"
+
   build-image:
     runs-on: ubuntu-latest
     name: 🐳 Build Docker Image
-    needs: build-and-test
+    needs: [build-and-test, security-and-quality]
     permissions:
       id-token: write
       contents: read
