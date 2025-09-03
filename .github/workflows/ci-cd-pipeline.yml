@@ -175,15 +175,33 @@ jobs:
       id: keyvault
       uses: azure/get-keyvault-secrets@v1
       with:
-        keyvault: ${{ secrets.AZURE_KEYVAULT_ENDPOINT }}
+        keyvault: ${{ secrets.AZURE_KEYVAULT_NAME }}
         secrets: |
-          database-url,
-          database-username,
-          database-password,
-          redis-host,
-          redis-password,
-          jwt-secret,
-          app-encryption-key
+          conexao-de-sorte-cors-allow-credentials,
+          conexao-de-sorte-cors-allowed-origins,
+          conexao-de-sorte-database-jdbc-url,
+          conexao-de-sorte-database-password,
+          conexao-de-sorte-database-r2dbc-url,
+          conexao-de-sorte-database-url,
+          conexao-de-sorte-database-username,
+          conexao-de-sorte-encryption-backup-key,
+          conexao-de-sorte-encryption-master-key,
+          conexao-de-sorte-encryption-master-password,
+          conexao-de-sorte-jwt-issuer,
+          conexao-de-sorte-jwt-jwks-uri,
+          conexao-de-sorte-jwt-key-id,
+          conexao-de-sorte-jwt-privateKey,
+          conexao-de-sorte-jwt-publicKey,
+          conexao-de-sorte-jwt-secret,
+          conexao-de-sorte-jwt-signing-key,
+          conexao-de-sorte-jwt-verification-key,
+          conexao-de-sorte-redis-database,
+          conexao-de-sorte-redis-host,
+          conexao-de-sorte-redis-password,
+          conexao-de-sorte-redis-port,
+          conexao-de-sorte-ssl-enabled,
+          conexao-de-sorte-ssl-keystore-password,
+          conexao-de-sorte-ssl-keystore-path
           
     - name: Deploy to Azure Container Instances
       uses: azure/aci-deploy@v1
@@ -199,13 +217,31 @@ jobs:
           SPRING_PROFILES_ACTIVE=prod
           SERVER_PORT=8080
         secure-environment-variables: |
-          SPRING_DATASOURCE_URL=${{ steps.keyvault.outputs.database-url }}
-          SPRING_DATASOURCE_USERNAME=${{ steps.keyvault.outputs.database-username }}
-          SPRING_DATASOURCE_PASSWORD=${{ steps.keyvault.outputs.database-password }}
-          SPRING_DATA_REDIS_HOST=${{ steps.keyvault.outputs.redis-host }}
-          SPRING_DATA_REDIS_PASSWORD=${{ steps.keyvault.outputs.redis-password }}
-          JWT_SECRET=${{ steps.keyvault.outputs.jwt-secret }}
-          APP_ENCRYPTION_KEY=${{ steps.keyvault.outputs.app-encryption-key }}
+          SPRING_DATASOURCE_URL=${{ steps.keyvault.outputs.conexao-de-sorte-database-url }}
+          SPRING_DATASOURCE_USERNAME=${{ steps.keyvault.outputs.conexao-de-sorte-database-username }}
+          SPRING_DATASOURCE_PASSWORD=${{ steps.keyvault.outputs.conexao-de-sorte-database-password }}
+          SPRING_R2DBC_URL=${{ steps.keyvault.outputs.conexao-de-sorte-database-r2dbc-url }}
+          SPRING_DATASOURCE_JDBC_URL=${{ steps.keyvault.outputs.conexao-de-sorte-database-jdbc-url }}
+          SPRING_DATA_REDIS_HOST=${{ steps.keyvault.outputs.conexao-de-sorte-redis-host }}
+          SPRING_DATA_REDIS_PASSWORD=${{ steps.keyvault.outputs.conexao-de-sorte-redis-password }}
+          SPRING_DATA_REDIS_PORT=${{ steps.keyvault.outputs.conexao-de-sorte-redis-port }}
+          SPRING_DATA_REDIS_DATABASE=${{ steps.keyvault.outputs.conexao-de-sorte-redis-database }}
+          JWT_SECRET=${{ steps.keyvault.outputs.conexao-de-sorte-jwt-secret }}
+          JWT_ISSUER=${{ steps.keyvault.outputs.conexao-de-sorte-jwt-issuer }}
+          JWT_PRIVATE_KEY=${{ steps.keyvault.outputs.conexao-de-sorte-jwt-privateKey }}
+          JWT_PUBLIC_KEY=${{ steps.keyvault.outputs.conexao-de-sorte-jwt-publicKey }}
+          JWT_SIGNING_KEY=${{ steps.keyvault.outputs.conexao-de-sorte-jwt-signing-key }}
+          JWT_VERIFICATION_KEY=${{ steps.keyvault.outputs.conexao-de-sorte-jwt-verification-key }}
+          JWT_JWKS_URI=${{ steps.keyvault.outputs.conexao-de-sorte-jwt-jwks-uri }}
+          JWT_KEY_ID=${{ steps.keyvault.outputs.conexao-de-sorte-jwt-key-id }}
+          ENCRYPTION_MASTER_KEY=${{ steps.keyvault.outputs.conexao-de-sorte-encryption-master-key }}
+          ENCRYPTION_MASTER_PASSWORD=${{ steps.keyvault.outputs.conexao-de-sorte-encryption-master-password }}
+          ENCRYPTION_BACKUP_KEY=${{ steps.keyvault.outputs.conexao-de-sorte-encryption-backup-key }}
+          CORS_ALLOWED_ORIGINS=${{ steps.keyvault.outputs.conexao-de-sorte-cors-allowed-origins }}
+          CORS_ALLOW_CREDENTIALS=${{ steps.keyvault.outputs.conexao-de-sorte-cors-allow-credentials }}
+          SSL_ENABLED=${{ steps.keyvault.outputs.conexao-de-sorte-ssl-enabled }}
+          SSL_KEYSTORE_PATH=${{ steps.keyvault.outputs.conexao-de-sorte-ssl-keystore-path }}
+          SSL_KEYSTORE_PASSWORD=${{ steps.keyvault.outputs.conexao-de-sorte-ssl-keystore-password }}
           
     - name: Run health check
       run: |

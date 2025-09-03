@@ -52,20 +52,49 @@ Configure os seguintes secrets no seu repositório GitHub:
 AZURE_CLIENT_ID          = "application-id-do-app-registration"
 AZURE_TENANT_ID          = "tenant-id-do-azure-ad"
 AZURE_SUBSCRIPTION_ID    = "id-da-sua-subscription"
-AZURE_KEYVAULT_ENDPOINT  = "nome-do-seu-keyvault"
+AZURE_KEYVAULT_NAME      = "nome-do-seu-keyvault"
 ```
 
 ### Secrets no Azure Key Vault
 Configure os seguintes secrets no Azure Key Vault:
 
 ```
-database-url             = "r2dbc:postgresql://servidor:5432/chatbot_db"
-database-username        = "usuario_do_banco"
-database-password        = "senha_do_banco"
-redis-host               = "endereco_do_redis"
-redis-password           = "senha_do_redis"
-jwt-secret               = "sua_chave_jwt_secreta"
-app-encryption-key       = "chave_de_criptografia_da_app"
+# Database Configuration
+conexao-de-sorte-database-url             = "r2dbc:postgresql://servidor:5432/chatbot_db"
+conexao-de-sorte-database-jdbc-url        = "jdbc:postgresql://servidor:5432/chatbot_db"
+conexao-de-sorte-database-r2dbc-url       = "r2dbc:postgresql://servidor:5432/chatbot_db"
+conexao-de-sorte-database-username        = "usuario_do_banco"
+conexao-de-sorte-database-password        = "senha_do_banco"
+
+# Redis Configuration
+conexao-de-sorte-redis-host               = "endereco_do_redis"
+conexao-de-sorte-redis-password           = "senha_do_redis"
+conexao-de-sorte-redis-port               = "6379"
+conexao-de-sorte-redis-database           = "0"
+
+# JWT Configuration
+conexao-de-sorte-jwt-secret               = "sua_chave_jwt_secreta"
+conexao-de-sorte-jwt-issuer               = "conexao-de-sorte"
+conexao-de-sorte-jwt-privateKey           = "chave_privada_jwt"
+conexao-de-sorte-jwt-publicKey            = "chave_publica_jwt"
+conexao-de-sorte-jwt-signing-key          = "chave_assinatura_jwt"
+conexao-de-sorte-jwt-verification-key     = "chave_verificacao_jwt"
+conexao-de-sorte-jwt-jwks-uri             = "uri_do_jwks"
+conexao-de-sorte-jwt-key-id               = "id_da_chave_jwt"
+
+# Encryption Configuration
+conexao-de-sorte-encryption-master-key    = "chave_mestre_criptografia"
+conexao-de-sorte-encryption-master-password = "senha_mestre_criptografia"
+conexao-de-sorte-encryption-backup-key    = "chave_backup_criptografia"
+
+# CORS Configuration
+conexao-de-sorte-cors-allowed-origins     = "http://localhost:3000,https://app.conexao-de-sorte.com"
+conexao-de-sorte-cors-allow-credentials   = "true"
+
+# SSL Configuration
+conexao-de-sorte-ssl-enabled              = "true"
+conexao-de-sorte-ssl-keystore-path        = "/path/to/keystore.p12"
+conexao-de-sorte-ssl-keystore-password    = "senha_do_keystore"
 ```
 
 ## 🏗️ Estrutura do Pipeline
@@ -107,13 +136,42 @@ az role assignment create \
   --scope "/subscriptions/sua-subscription-id/resourceGroups/rg-conexao-de-sorte/providers/Microsoft.KeyVault/vaults/kv-conexao-sorte-001"
 
 # Adicionar secrets
-az keyvault secret set --vault-name kv-conexao-sorte-001 --name database-url --value "r2dbc:postgresql://servidor:5432/chatbot_db"
-az keyvault secret set --vault-name kv-conexao-sorte-001 --name database-username --value "usuario_do_banco"
-az keyvault secret set --vault-name kv-conexao-sorte-001 --name database-password --value "senha_do_banco"
-az keyvault secret set --vault-name kv-conexao-sorte-001 --name redis-host --value "endereco_do_redis"
-az keyvault secret set --vault-name kv-conexao-sorte-001 --name redis-password --value "senha_do_redis"
-az keyvault secret set --vault-name kv-conexao-sorte-001 --name jwt-secret --value "sua_chave_jwt_secreta"
-az keyvault secret set --vault-name kv-conexao-sorte-001 --name app-encryption-key --value "chave_de_criptografia_da_app"
+# Database secrets
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-database-url --value "r2dbc:postgresql://servidor:5432/chatbot_db"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-database-jdbc-url --value "jdbc:postgresql://servidor:5432/chatbot_db"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-database-r2dbc-url --value "r2dbc:postgresql://servidor:5432/chatbot_db"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-database-username --value "usuario_do_banco"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-database-password --value "senha_do_banco"
+
+# Redis secrets
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-redis-host --value "endereco_do_redis"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-redis-password --value "senha_do_redis"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-redis-port --value "6379"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-redis-database --value "0"
+
+# JWT secrets
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-jwt-secret --value "sua_chave_jwt_secreta"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-jwt-issuer --value "conexao-de-sorte"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-jwt-privateKey --value "chave_privada_jwt"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-jwt-publicKey --value "chave_publica_jwt"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-jwt-signing-key --value "chave_assinatura_jwt"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-jwt-verification-key --value "chave_verificacao_jwt"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-jwt-jwks-uri --value "uri_do_jwks"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-jwt-key-id --value "id_da_chave_jwt"
+
+# Encryption secrets
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-encryption-master-key --value "chave_mestre_criptografia"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-encryption-master-password --value "senha_mestre_criptografia"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-encryption-backup-key --value "chave_backup_criptografia"
+
+# CORS secrets
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-cors-allowed-origins --value "http://localhost:3000,https://app.conexao-de-sorte.com"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-cors-allow-credentials --value "true"
+
+# SSL secrets
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-ssl-enabled --value "true"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-ssl-keystore-path --value "/path/to/keystore.p12"
+az keyvault secret set --vault-name kv-conexao-sorte-001 --name conexao-de-sorte-ssl-keystore-password --value "senha_do_keystore"
 ```
 
 ## 🔄 Diferenças vs Pipeline Anterior
