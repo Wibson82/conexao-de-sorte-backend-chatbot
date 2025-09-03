@@ -47,13 +47,6 @@ buildNumber.properties
 ### Spring Boot ###
 HELP.md
 
-# Gradle (caso ainda exista)
-.gradle/
-build/
-!gradle/wrapper/gradle-wrapper.jar
-.factorypath
-.project
-
 # IDEs
 .idea/
 *.iws
@@ -77,7 +70,6 @@ bin/
 /nbbuild/
 /dist/
 /nbdist/
-/.nb-gradle/
 !**/src/test/**/out/
 
 

@@ -1,7 +1,24 @@
 # ChatBot Menu - Sistema de Atendimento por Opções
 
 ## Descrição
-Sistema de chatbot baseado em menus e opções pré-determinadas, sem inteligência artificial. Ideal para atendimento automatizado com fluxos de decisão simples.
+Sistema de chatbot baseado em menus e opções pré-determina### Pré-requisitos
+- Java 24 ou superior
+- Maven
+
+### Executar Testes
+```bash
+./mvnw test
+```
+
+### Executar Aplicação em Desenvolvimento
+```bash
+./mvnw spring-boot:run
+```
+
+## Tecnologias Utilizadas
+- **Backend**: Spring Boot 3.5.5
+- **Banco de Dados**: PostgreSQL (produção) / H2 (desenvolvimento)
+- **Build**: Mavencia artificial. Ideal para atendimento automatizado com fluxos de decisão simples.
 
 ## Funcionalidades
 - Navegação por menus hierárquicos
@@ -16,16 +33,16 @@ Sistema de chatbot baseado em menus e opções pré-determinadas, sem inteligên
 ### 1. Modo Terminal (para testes rápidos)
 ```bash
 # Compile o projeto
-./gradlew build
+./mvnw clean compile
 
 # Execute no modo terminal
-./gradlew bootRun --args='--terminal'
+./mvnw spring-boot:run -Dspring.profiles.active=local
 ```
 
 ### 2. Modo Web/API
 ```bash
 # Execute o servidor
-./gradlew bootRun
+./mvnw spring-boot:run
 
 # Acesse:
 # - Interface Web: http://localhost:8080

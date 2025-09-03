@@ -3,30 +3,40 @@
 # ===============================================================================
 # Sistema reativo de apostas para Jogo do Bicho
 # Integração completa com JWT, R2DBC e WebFlux
+# Spring Boot 3.5.5 Compatible
 # ===============================================================================
 
 spring:
-  jackson:
-    time-zone: America/Sao_Paulo
-    locale: pt_BR
   application:
     name: conexao-de-sorte-chatbot
     
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:prod}
+    active: ${SPRING_PROFILES_ACTIVE:local}
   
-  # Configtree secret management
+  # Configtree secret management para Spring Boot 3.5.5
   config:
     import:
       - optional:configtree:/etc/secrets/azure/
       - optional:configtree:/mnt/secrets/
       - optional:file:./secrets.properties
       
+  # Jackson configuration para Spring Boot 3.5.5
+  jackson:
+    time-zone: America/Sao_Paulo
+    locale: pt_BR
+    default-property-inclusion: non_null
+    date-format: yyyy-MM-dd'T'HH:mm:ss.SSSXXX
+    serialization:
+      write-dates-as-timestamps: false
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
+      
   # R2DBC Database configuration for reactive betting system
   r2dbc:
-    url: r2dbc:mysql://localhost:3306/conexao_sorte_jogo_bicho
-    username: ${DB_USERNAME:jogo_bicho_user}
-    password: ${DB_PASSWORD:}  # No default password for security
+    url: ${SPRING_R2DBC_URL:r2dbc:postgresql://localhost:5432/conexao_sorte_jogo_bicho}
+    username: ${SPRING_R2DBC_USERNAME:${SPRING_DATASOURCE_USERNAME:jogo_bicho_user}}
+    password: ${SPRING_R2DBC_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
     pool:
       initial-size: 5
       max-size: 20
@@ -36,31 +46,35 @@ spring:
       max-create-connection-time: 30s
       max-life-time: 60m
       
-  # Flyway for migrations
+  # Flyway for migrations (Spring Boot 3.5.5)
   flyway:
     enabled: true
-    url: jdbc:mysql://localhost:3306/conexao_sorte_jogo_bicho
-    user: ${DB_USERNAME:jogo_bicho_user}
-    password: ${DB_PASSWORD:}  # No default password for security
+    url: ${SPRING_DATASOURCE_JDBC_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/conexao_sorte_jogo_bicho}}
+    user: ${SPRING_DATASOURCE_USERNAME:jogo_bicho_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: false
+    sql-migration-suffixes: .sql
+    baseline-version: 1
     
-  # Redis for betting sessions and cache
+  # Redis for betting sessions and cache (Spring Boot 3.5.5)
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-      database: ${REDIS_DB:3}  # DB 3 for betting system
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+      database: ${SPRING_DATA_REDIS_DATABASE:3}
       timeout: 5s
+      connect-timeout: 10s
       lettuce:
         pool:
           max-active: 15
           max-idle: 6
           min-idle: 2
+          max-wait: -1ms
     
-  # Security JWT for token validation
+  # Security JWT for token validation (Spring Boot 3.5.5)
   security:
     oauth2:
       resourceserver:
@@ -68,27 +82,38 @@ spring:
           jwk-set-uri: ${JWT_JWKS_URI:http://localhost:8081/.well-known/jwks.json}
           issuer-uri: ${JWT_ISSUER:https://auth.conexaodesorte.com}
           audiences: ${JWT_AUDIENCE:conexao-de-sorte}
+          
+  # WebFlux configuration (Spring Boot 3.5.5)
+  webflux:
+    base-path: /rest/v1/jogo-bicho
+    multipart:
+      max-in-memory-size: 1MB
+      max-disk-usage-per-part: 10MB
 
-# Server configuration
+# Server configuration (Spring Boot 3.5.5)
 server:
-  port: ${SERVER_PORT:8089}
+  port: ${SERVER_PORT:8087}
   shutdown: graceful
-  servlet:
-    context-path: /rest/v1/jogo-bicho
-  
-  # SSL/TLS Configuration
-  ssl:
-    enabled: ${SSL_ENABLED:false}
-    key-store: ${SSL_KEYSTORE_PATH:}
-    key-store-password: ${SSL_KEYSTORE_PASSWORD:}
-    key-store-type: PKCS12
-  
-  # Security error handling
   error:
     include-message: never
     include-binding-errors: never
     include-stacktrace: never
     include-exception: false
+  netty:
+    connection-timeout: 20s
+    h2c-max-content-length: 0B
+    initial-buffer-size: 128B
+    max-initial-line-length: 4096B
+    validate-headers: true
+  
+  # SSL/TLS Configuration (Spring Boot 3.5.5)
+  ssl:
+    enabled: ${SSL_ENABLED:false}
+    key-store: ${SSL_KEYSTORE_PATH:}
+    key-store-password: ${SSL_KEYSTORE_PASSWORD:}
+    key-store-type: PKCS12
+    protocol: TLS
+    enabled-protocols: [TLSv1.2, TLSv1.3]
 
 # Jogo do Bicho specific configuration
 jogo-bicho:
@@ -175,132 +200,186 @@ rate-limit:
       requests-per-minute: ${RATE_LIMIT_RESULTADOS:60}
       burst-capacity: ${RATE_LIMIT_RESULTADOS_BURST:100}
 
-# Actuator configuration
+# Actuator configuration (Spring Boot 3.5.5)
 management:
   endpoints:
     web:
       exposure:
-        include: ${ACTUATOR_ENDPOINTS:health,info,metrics,prometheus}
+        include: ${MANAGEMENT_ENDPOINTS_INCLUDE:health,info,metrics,prometheus}
       base-path: /actuator
       cors:
-        allowed-origins: ${ACTUATOR_CORS_ORIGINS:https://admin.conexaodesorte.com}
+        allowed-origins: ${MANAGEMENT_CORS_ORIGINS:https://admin.conexaodesorte.com}
         allowed-methods: GET
         
   endpoint:
     health:
-      show-details: ${ACTUATOR_HEALTH_DETAILS:when-authorized}
-      show-components: ${ACTUATOR_HEALTH_COMPONENTS:when-authorized}
+      show-details: ${MANAGEMENT_HEALTH_SHOW_DETAILS:when-authorized}
+      show-components: ${MANAGEMENT_HEALTH_SHOW_COMPONENTS:when-authorized}
       probes:
         enabled: true
+      group:
+        readiness:
+          include: readinessState,db,redis
+        liveness:
+          include: livenessState,ping
+          
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
         
   metrics:
-    export:
-      prometheus:
-        enabled: ${METRICS_PROMETHEUS_ENABLED:true}
     tags:
       service: conexao-de-sorte-chatbot
-      environment: ${SPRING_PROFILES_ACTIVE:dev}
+      environment: ${SPRING_PROFILES_ACTIVE:prod}
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+      percentiles:
+        "[http.server.requests]": 0.5, 0.95, 0.99
+      slo:
+        "[http.server.requests]": 10ms, 50ms, 100ms, 200ms, 500ms
+        
+  # Prometheus configuration (Spring Boot 3.5.5)
+  prometheus:
+    metrics:
+      export:
+        enabled: ${MANAGEMENT_PROMETHEUS_ENABLED:true}
 
-# Logging configuration
+# Logging configuration (Spring Boot 3.5.5)
 logging:
   level:
-    root: ${LOG_LEVEL:INFO}
-    br.tec.facilitaservicos.chatbot: ${LOG_LEVEL_APP:DEBUG}
-    org.springframework.security: ${LOG_LEVEL_SECURITY:INFO}
-    org.springframework.r2dbc: ${LOG_LEVEL_R2DBC:INFO}
+    root: ${LOGGING_LEVEL_ROOT:INFO}
+    "[br.tec.facilitaservicos.chatbot]": ${LOGGING_LEVEL_APP:INFO}
+    "[org.springframework.security]": ${LOGGING_LEVEL_SECURITY:INFO}
+    "[org.springframework.r2dbc]": ${LOGGING_LEVEL_R2DBC:INFO}
+    "[org.springframework.web.reactive]": ${LOGGING_LEVEL_WEBFLUX:INFO}
+    "[org.springframework.data.redis]": ${LOGGING_LEVEL_REDIS:INFO}
     
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} [JOGO-BICHO] - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} [JOGO-BICHO] [%X{apostaId:-}] [%X{usuario:-}] - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%t] %-40.40logger{39} [%X{traceId:-},%X{spanId:-}] : %m%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%t] %-40.40logger{39} [%X{traceId:-},%X{spanId:-}] [%X{apostaId:-}] [%X{usuario:-}] : %m%n"
     
   file:
-    name: ${LOG_FILE:/app/logs/jogo-bicho.log}
-    max-size: ${LOG_FILE_MAX_SIZE:100MB}
-    max-history: ${LOG_FILE_MAX_HISTORY:90}
+    name: ${LOGGING_FILE_NAME:./logs/conexao-de-sorte-chatbot.log}
+    
+  logback:
+    rollingpolicy:
+      max-file-size: ${LOGGING_LOGBACK_MAX_FILE_SIZE:100MB}
+      max-history: ${LOGGING_LOGBACK_MAX_HISTORY:90}
+      total-size-cap: ${LOGGING_LOGBACK_TOTAL_SIZE_CAP:1GB}
 
-# OpenAPI Documentation
+# OpenAPI Documentation (Spring Boot 3.5.5)
 springdoc:
   api-docs:
-    enabled: ${SPRINGDOC_ENABLED:true}
+    enabled: ${SPRINGDOC_API_DOCS_ENABLED:true}
     path: /v3/api-docs
   swagger-ui:
-    enabled: ${SWAGGER_UI_ENABLED:false}  # Disabled by default for security
+    enabled: ${SPRINGDOC_SWAGGER_UI_ENABLED:false}
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+    urls-primary-name: conexao-de-sorte-chatbot
+  show-actuator: ${SPRINGDOC_SHOW_ACTUATOR:false}
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
 
 ---
-# Development Profile
+# Development Profile (Spring Boot 3.5.5)
 spring:
   config:
     activate:
       on-profile: dev
       
   r2dbc:
-    url: r2dbc:mysql://localhost:3306/conexao_sorte_jogo_bicho_dev
+    url: r2dbc:postgresql://localhost:5432/conexao_sorte_jogo_bicho_dev
     
   flyway:
-    url: jdbc:mysql://localhost:3306/conexao_sorte_jogo_bicho_dev
+    url: jdbc:postgresql://localhost:5432/conexao_sorte_jogo_bicho_dev
+    
+  data:
+    redis:
+      database: 4  # Different database for dev
     
 jogo-bicho:
   apostas:
-    valor-minimo: 0.50  # Menor para testes
-    limite-diario-usuario: 1000.00  # Menor para dev
+    valor-minimo: 0.50
+    limite-diario-usuario: 1000.00
     
 springdoc:
   swagger-ui:
-    enabled: true  # Enable Swagger UI in development
+    enabled: true
     
 logging:
   level:
-    br.tec.facilitaservicos.chatbot: DEBUG
-    org.springframework.r2dbc: DEBUG
+    root: INFO
+    "[br.tec.facilitaservicos.chatbot]": DEBUG
+    "[org.springframework.r2dbc]": DEBUG
+    "[org.springframework.web.reactive]": DEBUG
+
+server:
+  port: 8087
 
 ---
-# Test Profile  
+# Test Profile (Spring Boot 3.5.5)
 spring:
   config:
     activate:
       on-profile: test
       
   r2dbc:
-    url: r2dbc:h2:mem:jogo_bicho_test;MODE=MySQL;DB_CLOSE_DELAY=-1
+    url: r2dbc:h2:mem:///jogo_bicho_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
     username: sa
     password: ""
     
   flyway:
     enabled: false
     
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 1s
+    
 jogo-bicho:
   apostas:
-    horarios-permitidos: []  # Permitir apostas a qualquer hora em testes
+    horarios-permitidos: []
   seguranca:
-    validacao-integridade: false  # Simplificar para testes
+    validacao-integridade: false
     auditoria-apostas: false
     
 logging:
   level:
     root: WARN
-    br.tec.facilitaservicos.chatbot: DEBUG
+    "[br.tec.facilitaservicos.chatbot]": DEBUG
+
+management:
+  endpoint:
+    health:
+      show-details: always
 
 ---
-# Production Profile
+# Production Profile (Spring Boot 3.5.5)
 spring:
   config:
     activate:
       on-profile: prod
       
   r2dbc:
-    url: r2dbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME:conexao_sorte_jogo_bicho}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: ${SPRING_R2DBC_URL}
+    username: ${SPRING_R2DBC_USERNAME:${SPRING_DATASOURCE_USERNAME}}
+    password: ${SPRING_R2DBC_PASSWORD:${SPRING_DATASOURCE_PASSWORD}}
     
   flyway:
-    url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME:conexao_sorte_jogo_bicho}
-    user: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: ${SPRING_DATASOURCE_JDBC_URL:${SPRING_DATASOURCE_URL}}
+    user: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     
 server:
-  port: 8089
+  port: 8087
   ssl:
-    enabled: true
+    enabled: ${SSL_ENABLED:false}
     
 jogo-bicho:
   seguranca:
@@ -315,31 +394,25 @@ management:
 logging:
   level:
     root: INFO
-    br.tec.facilitaservicos.chatbot: INFO
-    
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} [JOGO-BICHO] - %msg%n"
-    
-  file:
-    name: ./logs/jogo-bicho.log
+    "[br.tec.facilitaservicos.chatbot]": INFO
     
 rate-limit:
-  default-requests-per-minute: 15  # Mais restritivo em produção
+  default-requests-per-minute: 15
 
 ---
-# Local Development Profile (H2 Database)
+# Local Development Profile (Spring Boot 3.5.5)
 spring:
   config:
     activate:
       on-profile: local
       
   r2dbc:
-    url: r2dbc:h2:mem:jogo_bicho_local;MODE=MySQL;DB_CLOSE_DELAY=-1
+    url: r2dbc:h2:mem:///jogo_bicho_local;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
     username: sa
     password: ""
     
   flyway:
-    enabled: false  # Disable Flyway for local H2
+    enabled: false
     
   security:
     oauth2:
@@ -348,18 +421,22 @@ spring:
           jwk-set-uri: http://localhost:8081/.well-known/jwks.json
           issuer-uri: http://localhost:8081
           
+  data:
+    redis:
+      database: 5
+          
 jogo-bicho:
   apostas:
     valor-minimo: 0.50
     limite-diario-usuario: 1000.00
-    horarios-permitidos: []  # Allow betting at any time for local development
+    horarios-permitidos: []
     
   seguranca:
     validacao-integridade: false
     auditoria-apostas: false
     
 server:
-  port: 8089
+  port: 8087
   ssl:
     enabled: false
     
@@ -370,8 +447,8 @@ springdoc:
 logging:
   level:
     root: INFO
-    br.tec.facilitaservicos.chatbot: DEBUG
-    org.springframework.r2dbc: DEBUG
+    "[br.tec.facilitaservicos.chatbot]": DEBUG
+    "[org.springframework.r2dbc]": DEBUG
     
 management:
   endpoint:

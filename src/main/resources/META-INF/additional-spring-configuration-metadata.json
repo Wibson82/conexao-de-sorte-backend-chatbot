@@ -1,0 +1,161 @@
+{
+  "properties": [
+    {
+      "name": "jogo-bicho",
+      "type": "java.lang.Object",
+      "description": "Configurações específicas do sistema de apostas do Jogo do Bicho",
+      "sourceType": "br.tec.facilitaservicos.chatbot.infrastructure.config.JogoBichoProperties"
+    },
+    {
+      "name": "jogo-bicho.apostas",
+      "type": "java.lang.Object",
+      "description": "Configurações de apostas do Jogo do Bicho"
+    },
+    {
+      "name": "jogo-bicho.apostas.valor-minimo",
+      "type": "java.math.BigDecimal",
+      "description": "Valor mínimo para apostas",
+      "defaultValue": "1.00"
+    },
+    {
+      "name": "jogo-bicho.apostas.valor-maximo",
+      "type": "java.math.BigDecimal",
+      "description": "Valor máximo para apostas",
+      "defaultValue": "1000.00"
+    },
+    {
+      "name": "jogo-bicho.apostas.limite-diario-usuario",
+      "type": "java.math.BigDecimal",
+      "description": "Limite diário de apostas por usuário",
+      "defaultValue": "5000.00"
+    },
+    {
+      "name": "jogo-bicho.apostas.horarios-permitidos",
+      "type": "java.util.List<java.lang.String>",
+      "description": "Lista de horários permitidos para apostas"
+    },
+    {
+      "name": "jogo-bicho.regras",
+      "type": "java.lang.Object",
+      "description": "Regras do jogo"
+    },
+    {
+      "name": "jogo-bicho.premiacao",
+      "type": "java.lang.Object",
+      "description": "Configurações de premiação"
+    },
+    {
+      "name": "jogo-bicho.sessao",
+      "type": "java.lang.Object",
+      "description": "Configurações de sessão"
+    },
+    {
+      "name": "jogo-bicho.seguranca",
+      "type": "java.lang.Object",
+      "description": "Configurações de segurança"
+    },
+    {
+      "name": "security",
+      "type": "java.lang.Object",
+      "description": "Configurações de segurança customizadas",
+      "sourceType": "br.tec.facilitaservicos.chatbot.infrastructure.config.SecurityProperties"
+    },
+    {
+      "name": "security.headers",
+      "type": "java.lang.Object",
+      "description": "Configurações de headers de segurança"
+    },
+    {
+      "name": "cors",
+      "type": "java.lang.Object",
+      "description": "Configurações CORS customizadas",
+      "sourceType": "br.tec.facilitaservicos.chatbot.infrastructure.config.CorsProperties"
+    },
+    {
+      "name": "cors.allowed-origins",
+      "type": "java.lang.String",
+      "description": "Origens permitidas para CORS"
+    },
+    {
+      "name": "cors.allowed-methods",
+      "type": "java.lang.String",
+      "description": "Métodos HTTP permitidos para CORS"
+    },
+    {
+      "name": "cors.allowed-headers",
+      "type": "java.lang.String",
+      "description": "Headers permitidos para CORS"
+    },
+    {
+      "name": "cors.allow-credentials",
+      "type": "java.lang.Boolean",
+      "description": "Permitir credenciais em requisições CORS",
+      "defaultValue": true
+    },
+    {
+      "name": "cors.max-age",
+      "type": "java.lang.Integer",
+      "description": "Tempo de cache para preflight requests",
+      "defaultValue": 1800
+    },
+    {
+      "name": "rate-limit",
+      "type": "java.lang.Object",
+      "description": "Configurações de rate limiting",
+      "sourceType": "br.tec.facilitaservicos.chatbot.infrastructure.config.RateLimitProperties"
+    },
+    {
+      "name": "rate-limit.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Habilitar rate limiting",
+      "defaultValue": true
+    },
+    {
+      "name": "rate-limit.default-requests-per-minute",
+      "type": "java.lang.Integer",
+      "description": "Número padrão de requisições por minuto",
+      "defaultValue": 30
+    },
+    {
+      "name": "rate-limit.endpoints",
+      "type": "java.util.Map<java.lang.String,java.lang.Object>",
+      "description": "Configurações específicas por endpoint"
+    }
+  ],
+  "hints": [
+    {
+      "name": "jogo-bicho.apostas.horarios-permitidos",
+      "values": [
+        {
+          "value": "08:00",
+          "description": "Sorteio Matinal"
+        },
+        {
+          "value": "11:00",
+          "description": "Sorteio Vespertino"
+        },
+        {
+          "value": "14:00",
+          "description": "Sorteio da Tarde"
+        },
+        {
+          "value": "18:00",
+          "description": "Sorteio Noturno"
+        },
+        {
+          "value": "21:00",
+          "description": "Sorteio Especial"
+        }
+      ]
+    },
+    {
+      "name": "cors.allowed-methods",
+      "values": [
+        {
+          "value": "GET,POST,PUT,DELETE,OPTIONS",
+          "description": "Métodos HTTP padrão para API REST"
+        }
+      ]
+    }
+  ]
+}

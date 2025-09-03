@@ -4,7 +4,7 @@ echo "🎰 INICIANDO SISTEMA DE APOSTAS - JOGO DO BICHO 🎰"
 echo "=================================================="
 
 # Compilar o projeto
-./gradlew build
+./mvnw clean compile
 
 if [ $? -ne 0 ]; then
     echo "❌ Erro na compilação do projeto"
@@ -12,6 +12,6 @@ if [ $? -ne 0 ]; then
 fi
 
 # Executar o sistema de jogo do bicho
-./gradlew runJogoBicho --console=plain
+./mvnw spring-boot:run -Dspring.profiles.active=local
 
 echo "✅ Sistema encerrado"

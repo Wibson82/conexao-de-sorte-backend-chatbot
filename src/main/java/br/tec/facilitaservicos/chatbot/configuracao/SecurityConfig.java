@@ -79,18 +79,18 @@ public class SecurityConfig {
     @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
     private String jwkSetUri;
 
-    @Value("${cors.allowed-origins:https://apostas.conexaodesorte.com,https://admin.conexaodesorte.com}")
+    @Value("${CORS_ALLOWED_ORIGINS:https://apostas.conexaodesorte.com,https://admin.conexaodesorte.com}")
     private String allowedOriginsProperty;
 
     private List<String> allowedOrigins;
 
-    @Value("#{'${cors.allowed-methods:GET,POST,PUT,DELETE,OPTIONS}'.split(',')}")
+    @Value("#{'${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}'.split(',')}")
     private List<String> allowedMethods;
 
-    @Value("${cors.allow-credentials:true}")
+    @Value("${CORS_ALLOW_CREDENTIALS:true}")
     private boolean allowCredentials;
 
-    @Value("${cors.max-age:1800}")
+    @Value("${CORS_MAX_AGE:1800}")
     private long maxAge;
 
     private final Environment environment;
