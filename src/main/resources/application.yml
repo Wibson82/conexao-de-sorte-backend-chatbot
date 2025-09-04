@@ -64,7 +64,7 @@ spring:
       host: ${SPRING_DATA_REDIS_HOST:localhost}
       port: ${SPRING_DATA_REDIS_PORT:6379}
       password: ${SPRING_DATA_REDIS_PASSWORD:}
-      database: ${SPRING_DATA_REDIS_DATABASE:3}
+      database: ${SPRING_DATA_REDIS_DATABASE:5}
       timeout: 5s
       connect-timeout: 10s
       lettuce:
@@ -299,7 +299,7 @@ spring:
     
   data:
     redis:
-      database: 4  # Different database for dev
+      database: 5  # Padronizado para DB 5
     
 jogo-bicho:
   apostas:
@@ -339,7 +339,7 @@ spring:
     redis:
       host: localhost
       port: 6379
-      database: 0
+      database: 5
       timeout: 1s
     
 jogo-bicho:

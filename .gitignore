@@ -1,16 +1,11 @@
-# Compiled class file
+# ===============================================================================
+# GITIGNORE - CHATBOT MICROSERVICE (Spring Boot 3.5.5 + Maven + Java 24)
+# ===============================================================================
+
+# Compiled class files
 *.class
 
-# Log file
-*.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
+# Package Files
 *.jar
 *.war
 *.nar
@@ -23,17 +18,9 @@
 hs_err_pid*
 replay_pid*
 
-### Maven ###
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
-dependency-reduced-pom.xml
-buildNumber.properties
-
-# Maven
+# ===============================================================================
+# MAVEN
+# ===============================================================================
 target/
 pom.xml.tag
 pom.xml.releaseBackup
@@ -43,27 +30,44 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
-### Spring Boot ###
-HELP.md
 
+# LEGADO GRADLE (MIGRAÇÃO) - evitar cache antigo
+.gradle/
+build/
+
+# ===============================================================================
+# SPRING BOOT
+# ===============================================================================
+# HELP.md (removido do ignore para documentacao)
+*.original
+
+# ===============================================================================
 # IDEs
+# ===============================================================================
+# IntelliJ IDEA
 .idea/
 *.iws
 *.iml
 *.ipr
 .out/
-.vscode/
-.settings/
+out/
+
+# Eclipse
 .classpath
 .project
+.settings/
 .factorypath
 .apt_generated
 .springBeans
 .sts4-cache
 bin/
-.sts4-cache
-bin/
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
 # NetBeans
 /nbproject/private/
@@ -72,53 +76,158 @@ bin/
 /nbdist/
 !**/src/test/**/out/
 
-
-# Logs
+# ===============================================================================
+# LOGS & MONITORING
+# ===============================================================================
 *.log
 logs/
 server.log
-/nbproject/private/
-/nbbuild/
+application*.log
 
-# Segurança
+# ===============================================================================
+# SEGURANÇA & CREDENCIAIS
+# ===============================================================================
 *.pem
 *.key
 *.p12
 *.jks
+*.keystore
+*.crt
+*.pub
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 secrets/
 keys/
-*.key
-*.p12
+config/secrets/
+credentials/
+*.credentials
+SECRETS-SUMMARY.md
 
-# Sistema operacional
+# ===============================================================================
+# SISTEMA OPERACIONAL
+# ===============================================================================
+# macOS
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
+
+# Windows
 ehthumbs.db
 Thumbs.db
-### Logs ###
-logs/
+Desktop.ini
 
-# Arquivos temporários
+# Linux
+*~
+
+# ===============================================================================
+# ARQUIVOS TEMPORÁRIOS
+# ===============================================================================
 *.tmp
 *.bak
 *.swp
 *~.nib
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+*.backup
+*.temp
 
-### Temporary files ###
-*.tmp
-*.bak
-*.swp
-*~.nib
+# ===============================================================================
+# DOCKER & CONTAINERS
+# ===============================================================================
+docker-compose.override.yml
+.docker/
+.dockerignore.tmp
+
+# ===============================================================================
+# CACHE & RUNTIME
+# ===============================================================================
+# Redis
+dump.rdb
+
+# Cache directories
+.cache/
+cache/
+
+# Runtime directories
+runtime/
+run/
+
+# ===============================================================================
+# TEST & COVERAGE
+# ===============================================================================
+surefire-reports/
+failsafe-reports/
+jacoco.exec
+.jacoco/
+coverage/
+
+# ===============================================================================
+# DOCUMENTAÇÃO & REPORTS
+# ===============================================================================
+# Generated documentation
+docs/build/
+site/
+
+# Test reports
+reports/
+test-output/
+
+# ===============================================================================
+# NODE.JS (se houver frontend)
+# ===============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# ===============================================================================
+# AZURE & CLOUD
+# ===============================================================================
+.azure/
+azds.yaml
+charts/
+.deployment
+
+# ===============================================================================
+# CI/CD
+# ===============================================================================
+.github/workflows/test-results/
+.github/workflows/coverage/
+
+# ===============================================================================
+# FERRAMENTAS DE DESENVOLVIMENTO
+# ===============================================================================
+# SonarQube
+.sonar/
+# sonar-project.properties (removido do ignore para versionamento)
+
+# JMeter
+*.jmx.results
+
+# ===============================================================================
+# ARQUIVOS ESPECÍFICOS DO PROJETO
+# ===============================================================================
+# Arquivos de configuração local
+application-local.yml
+application-dev.yml
+application-*.properties
+application-*.yml
+
+# Arquivos de dados locais
+data/
+database/
+*.db
+*.sqlite
+
+# Backups
+backup/
+*.backup
+
+# ===============================================================================
+# DUMPS DE MEMÓRIA
+# ===============================================================================
+*.hprof
+heapdump.hprof
