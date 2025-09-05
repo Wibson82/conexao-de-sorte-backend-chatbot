@@ -13,12 +13,24 @@ spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
   
-  # Configtree secret management para Spring Boot 3.5.5
+  # Config import para Azure Key Vault secrets
   config:
     import:
       - optional:configtree:/etc/secrets/azure/
       - optional:configtree:/mnt/secrets/
       - optional:file:./secrets.properties
+      
+  # Azure Key Vault (padrão simplificado)
+  cloud:
+    azure:
+      keyvault:
+        secret:
+          enabled: ${AZURE_KEYVAULT_ENABLED:false}
+          endpoint: ${AZURE_KEYVAULT_ENDPOINT:}
+      profile:
+        tenant-id: ${AZURE_TENANT_ID:}
+        subscription-id: ${AZURE_SUBSCRIPTION_ID:}
+        client-id: ${AZURE_CLIENT_ID:}
       
   # Jackson configuration para Spring Boot 3.5.5
   jackson:
