@@ -61,7 +61,7 @@ spring:
   # Redis for betting sessions and cache (Spring Boot 3.5.5)
   data:
     redis:
-      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      host: ${conexao-de-sorte-redis-host:localhost}
       port: ${SPRING_DATA_REDIS_PORT:6379}
       password: ${SPRING_DATA_REDIS_PASSWORD:}
       database: ${SPRING_DATA_REDIS_DATABASE:5}
@@ -92,7 +92,7 @@ spring:
 
 # Server configuration (Spring Boot 3.5.5)
 server:
-  port: ${SERVER_PORT:8087}
+  port: ${conexao-de-sorte-server-port:8087}
   shutdown: graceful
   error:
     include-message: never
