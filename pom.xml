@@ -28,7 +28,7 @@
         
         <!-- Testcontainers -->
         <testcontainers.version>1.20.4</testcontainers.version>
-        <spring-cloud.version>2024.0.0</spring-cloud.version> <!-- Versão estável compatível com Spring Boot 3.5.5 -->
+        <spring-cloud.version>2025.0.0</spring-cloud.version>
     </properties>
 
     <dependencyManagement>
