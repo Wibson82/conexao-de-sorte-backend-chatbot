@@ -11,7 +11,7 @@ spring:
     name: conexao-de-sorte-chatbot
     
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local}
+    active: ${SPRING_PROFILES_ACTIVE:prod}
   
   # Config import para Azure Key Vault secrets
   config:
@@ -44,11 +44,12 @@ spring:
     deserialization:
       fail-on-unknown-properties: false
       
-  # R2DBC Database configuration for reactive betting system
+  # R2DBC Database configuration for reactive betting system (MySQL alinhado com demais serviços)
   r2dbc:
-    url: ${SPRING_R2DBC_URL:r2dbc:postgresql://localhost:5432/conexao_sorte_jogo_bicho}
-    username: ${SPRING_R2DBC_USERNAME:${SPRING_DATASOURCE_USERNAME:jogo_bicho_user}}
-    password: ${SPRING_R2DBC_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
+    # Preferencialmente usa -database-r2dbc-url; mantém compat com -database-url
+    url: ${conexao-de-sorte-database-r2dbc-url:${conexao-de-sorte-database-url:r2dbc:mysql://mysql-proxy:6033/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false}}
+    username: ${conexao-de-sorte-database-username:}
+    password: ${conexao-de-sorte-database-password:}
     pool:
       initial-size: 5
       max-size: 20
@@ -58,12 +59,12 @@ spring:
       max-create-connection-time: 30s
       max-life-time: 60m
       
-  # Flyway for migrations (Spring Boot 3.5.5)
+  # Flyway for migrations (MySQL via JDBC)
   flyway:
     enabled: true
-    url: ${SPRING_DATASOURCE_JDBC_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/conexao_sorte_jogo_bicho}}
-    user: ${SPRING_DATASOURCE_USERNAME:jogo_bicho_user}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
+    url: ${conexao-de-sorte-database-jdbc-url:jdbc:mysql://mysql-proxy:6033/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false}
+    user: ${conexao-de-sorte-database-username:}
+    password: ${conexao-de-sorte-database-password:}
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: false
@@ -297,81 +298,6 @@ springdoc:
   default-produces-media-type: application/json
 
 ---
-# Development Profile (Spring Boot 3.5.5)
-spring:
-  config:
-    activate:
-      on-profile: dev
-      
-  r2dbc:
-    url: r2dbc:postgresql://localhost:5432/conexao_sorte_jogo_bicho_dev
-    
-  flyway:
-    url: jdbc:postgresql://localhost:5432/conexao_sorte_jogo_bicho_dev
-    
-  data:
-    redis:
-      database: 5  # Padronizado para DB 5
-    
-jogo-bicho:
-  apostas:
-    valor-minimo: 0.50
-    limite-diario-usuario: 1000.00
-    
-springdoc:
-  swagger-ui:
-    enabled: true
-    
-logging:
-  level:
-    root: INFO
-    "[br.tec.facilitaservicos.chatbot]": DEBUG
-    "[org.springframework.r2dbc]": DEBUG
-    "[org.springframework.web.reactive]": DEBUG
-
-server:
-  port: 8087
-
----
-# Test Profile (Spring Boot 3.5.5)
-spring:
-  config:
-    activate:
-      on-profile: test
-      
-  r2dbc:
-    url: r2dbc:h2:mem:///jogo_bicho_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
-    username: sa
-    password: ""
-    
-  flyway:
-    enabled: false
-    
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      database: 5
-      timeout: 1s
-    
-jogo-bicho:
-  apostas:
-    horarios-permitidos: []
-  seguranca:
-    validacao-integridade: false
-    auditoria-apostas: false
-    
-logging:
-  level:
-    root: WARN
-    "[br.tec.facilitaservicos.chatbot]": DEBUG
-
-management:
-  endpoint:
-    health:
-      show-details: always
-
----
 # Production Profile (Spring Boot 3.5.5)
 spring:
   config:
@@ -410,59 +336,3 @@ logging:
     
 rate-limit:
   default-requests-per-minute: 15
-
----
-# Local Development Profile (Spring Boot 3.5.5)
-spring:
-  config:
-    activate:
-      on-profile: local
-      
-  r2dbc:
-    url: r2dbc:h2:mem:///jogo_bicho_local;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
-    username: sa
-    password: ""
-    
-  flyway:
-    enabled: false
-    
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://localhost:8081/.well-known/jwks.json
-          issuer-uri: http://localhost:8081
-          
-  data:
-    redis:
-      database: 5
-          
-jogo-bicho:
-  apostas:
-    valor-minimo: 0.50
-    limite-diario-usuario: 1000.00
-    horarios-permitidos: []
-    
-  seguranca:
-    validacao-integridade: false
-    auditoria-apostas: false
-    
-server:
-  port: 8087
-  ssl:
-    enabled: false
-    
-springdoc:
-  swagger-ui:
-    enabled: true
-    
-logging:
-  level:
-    root: INFO
-    "[br.tec.facilitaservicos.chatbot]": DEBUG
-    "[org.springframework.r2dbc]": DEBUG
-    
-management:
-  endpoint:
-    health:
-      show-details: always
