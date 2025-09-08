@@ -27,10 +27,12 @@ concurrency:
 jobs:
   test-runner:
     runs-on: [self-hosted, chatbot-service]
+    timeout-minutes: 20 # Step timeouts: 10 + 10
     name: 🧪 Test Self-hosted Runner
     steps:
       - uses: actions/checkout@v4
       - name: "Guard: forbid r2dbc:h2 outside tests"
+        timeout-minutes: 10
         run: |
           set -euo pipefail
           FOUND=$(grep -R --line-number --include='*.yml' --include='*.properties' --include='*.yaml' "r2dbc:h2" src || true)
@@ -40,6 +42,7 @@ jobs:
             exit 1
           fi
       - name: Test runner connectivity
+        timeout-minutes: 10
         run: |
           echo "🎉 Self-hosted runner está funcionando!"
           echo "🏃 Runner: $(hostname)"
@@ -54,16 +57,19 @@ jobs:
   build-and-test:
     needs: test-runner
     runs-on: self-hosted
+    timeout-minutes: 50 # Step timeouts: 10 + 10 + 20 + 10
     name: 🏗️ Build and Test
     steps:
       - uses: actions/checkout@v4
       - name: Setup Java 24
+        timeout-minutes: 10
         uses: actions/setup-java@v4
         with:
           java-version: '24'
           distribution: 'temurin'
           cache: maven
       - name: Verify Maven wrapper
+        timeout-minutes: 10
         run: |
           chmod +x ./mvnw
           ./mvnw --version
@@ -101,8 +107,10 @@ jobs:
       #     command: monitor
       #     args: --project-name=chatbot-service
       - name: Build application (skip tests)
+        timeout-minutes: 20
         run: ./mvnw clean package -DskipTests
       - name: Upload artifact
+        timeout-minutes: 10
         uses: actions/upload-artifact@v4
         with:
           name: chatbot-microservice-jar
@@ -111,6 +119,7 @@ jobs:
 
   build-image:
     runs-on: self-hosted
+    timeout-minutes: 80 # Step timeouts: 10 + 10 + 10 + 10 + 10 + 30
     name: 🐳 Build Docker Image
     needs: build-and-test
     permissions:
@@ -126,15 +135,18 @@ jobs:
       - uses: actions/checkout@v4
       - name: Compute lowercase image name
         id: image_name
+        timeout-minutes: 10
         run: |
           set -euo pipefail
           REPO='${{ env.IMAGE_NAME }}'
           echo "image_name_lower=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
       - name: Set up Docker Buildx
+        timeout-minutes: 10
         uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
       - name: Login to GHCR
+        timeout-minutes: 10
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -142,6 +154,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract metadata
         id: meta
+        timeout-minutes: 10
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.image_name_lower }}
@@ -155,6 +168,7 @@ jobs:
             org.opencontainers.image.service=${{ env.SERVICE_NAME }}
       - name: Build and push image
         id: build
+        timeout-minutes: 30
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -175,6 +189,7 @@ jobs:
 
   sign-image:
     runs-on: self-hosted
+    timeout-minutes: 60 # Step timeouts: 10 + 10 + 10 + 10 + 10 + 10
     name: ✍️ Sign & Verify (100% OIDC keyless)
     needs: build-image
     permissions:
@@ -184,6 +199,7 @@ jobs:
       attestations: write
     steps:
       - name: Verify OIDC token availability
+        timeout-minutes: 10
         run: |
           echo "🔍 Verifying OIDC token is available..."
           if [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
@@ -193,29 +209,35 @@ jobs:
           echo "✅ OIDC token is available"
       - name: Resolve image digest ref
         id: ref
+        timeout-minutes: 10
         run: |
           set -euo pipefail
           IMG="ghcr.io/${{ needs.build-image.outputs.image-name-lower }}@${{ needs.build-image.outputs.image-digest }}"
           echo "lower=$(echo "$IMG" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
       - name: Install cosign
+        timeout-minutes: 10
         uses: sigstore/cosign-installer@v3
         with:
           cosign-release: v2.5.3
       - name: Login GHCR
+        timeout-minutes: 10
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull digest
+        timeout-minutes: 10
         run: docker pull "${{ steps.ref.outputs.lower }}"
       - name: Sign (keyless OIDC)
+        timeout-minutes: 10
         env:
           COSIGN_EXPERIMENTAL: "1"
         run: |
           echo "🔐 Signing container image with OIDC keyless signature..."
           cosign sign --yes "${{ steps.ref.outputs.lower }}"
       - name: Verify OIDC signature
+        timeout-minutes: 10
         env:
           COSIGN_EXPERIMENTAL: "1"
         run: |
@@ -229,6 +251,7 @@ jobs:
   deploy-production:
     needs: [build-image, sign-image]
     runs-on: [self-hosted, chatbot-service]
+    timeout-minutes: 50 # Step timeouts: 10 + 10 + 10 + 10 + 10
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
     name: 🌟 Deploy to Production (Self-hosted)
     permissions:
@@ -238,12 +261,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Azure Login (OIDC)
+        timeout-minutes: 10
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: Load Azure Key Vault secrets
+        timeout-minutes: 10
         run: |
           set -euo pipefail
           VAULT_ENDPOINT="${{ secrets.AZURE_KEYVAULT_ENDPOINT }}"
@@ -264,12 +289,14 @@ jobs:
           echo "JWT_JWKS_URI=$(get conexao-de-sorte-jwt-jwks-uri)" >> $GITHUB_ENV
           echo "JWT_ISSUER=$(get conexao-de-sorte-jwt-issuer)" >> $GITHUB_ENV
       - name: 🧹 Clean old containers
+        timeout-minutes: 10
         run: |
           echo "🧹 Cleaning old chatbot-microservice containers..."
           if docker ps -a --format '{{.Names}}' | grep -q '^chatbot-microservice$'; then
             docker stop 'chatbot-microservice' && docker rm 'chatbot-microservice'
           fi
       - name: 🚀 Deploy chatbot-microservice
+        timeout-minutes: 10
         run: |
           set -euo pipefail
           IMAGE_DIGEST="${{ needs.build-image.outputs.image-digest }}"
@@ -308,6 +335,7 @@ jobs:
             --label "traefik.http.services.chatbot.loadbalancer.server.port=8087" \
             "${FULL_IMAGE}"
       - name: Wait for service to be ready
+        timeout-minutes: 10
         run: |
           TIMEOUT=180
           ELAPSED=0
@@ -325,12 +353,14 @@ jobs:
 
   notify:
     runs-on: self-hosted
+    timeout-minutes: 5
     name: 📢 Notification
     if: always()
     needs: [build-and-test, build-image, sign-image, deploy-production]
     steps:
       - name: 📧 Send Slack notification
         if: always()
+        timeout-minutes: 10
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
