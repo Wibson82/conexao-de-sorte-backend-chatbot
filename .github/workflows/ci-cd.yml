@@ -33,7 +33,7 @@ concurrency:
 jobs:
   validate-environment:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
 
@@ -64,7 +64,7 @@ jobs:
   build-test-scan:
     needs: validate-environment
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
 
@@ -92,7 +92,7 @@ jobs:
   build-image:
     needs: build-test-scan
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 8
     outputs:
       image: ${{ steps.build.outputs.image }}
     permissions:
@@ -189,7 +189,7 @@ jobs:
   deploy-selfhosted:
     needs: build-image
     runs-on: [ self-hosted, Linux, X64, conexao, conexao-de-sorte-backend-chatbot ]
-    timeout-minutes: 30
+    timeout-minutes: 8
     if: |
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production'))
@@ -289,82 +289,56 @@ jobs:
           
           echo "✅ Limpeza concluída"
 
-      - name: Deploy via docker stack
+      - name: Deploy/Update Chatbot (docker service update/create)
         run: |
-          STACK=conexao-chatbot
           IMAGE="${{ needs.build-image.outputs.image }}"
-          
-          # Criar rede se não existir
-          docker network create --driver overlay conexao-network 2>/dev/null || true
-          
-          cat <<EOF | docker stack deploy --with-registry-auth -c - $STACK
-          version: "3.9"
-          services:
-            chatbot:
-              image: $IMAGE
-              secrets:
-                - chatbot_redis_password
-                - chatbot_jwt_secret
-              environment:
-                # Spring Configuration
-                SPRING_PROFILES_ACTIVE: prod,azure
-                TZ: America/Sao_Paulo
-                SERVER_PORT: 8080
-                
-                # Redis Configuration
-                SPRING_DATA_REDIS_HOST: "$REDIS_HOST"
-                SPRING_DATA_REDIS_PORT: "$REDIS_PORT"
-                SPRING_DATA_REDIS_DATABASE: "$REDIS_DATABASE"
-                
-                # JWT Configuration
-                JWT_ISSUER: "$JWT_ISSUER"
-                
-                # CORS Configuration
-                CORS_ALLOWED_ORIGINS: "$CORS_ALLOWED_ORIGINS"
-                CORS_ALLOW_CREDENTIALS: "$CORS_ALLOW_CREDENTIALS"
-                
-                # Azure Configuration
-                AZURE_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}"
-                AZURE_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
-                AZURE_KEYVAULT_ENDPOINT: "${{ secrets.AZURE_KEYVAULT_ENDPOINT }}"
-                AZURE_KEYVAULT_ENABLED: "true"
-                
-              deploy:
-                restart_policy:
-                  condition: any
-                  delay: 30s
-                  max_attempts: 2
-                  window: 120s
-                replicas: 1
-                resources:
-                  limits:
-                    memory: 512M
-                  reservations:
-                    memory: 256M
-              healthcheck:
-                test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-                interval: 30s
-                timeout: 10s
-                retries: 3
-                start_period: 60s
-              networks:
-                - conexao-network
-              labels:
-                - "traefik.enable=true"
-                - "traefik.http.routers.chatbot.rule=Host(\`chatbot.conexaodesorte.com.br\`)"
-                - "traefik.http.routers.chatbot.tls.certresolver=letsencrypt"
-                - "traefik.http.services.chatbot.loadbalancer.server.port=8080"
-          
-          secrets:
-            chatbot_redis_password:
-              external: true
-            chatbot_jwt_secret:
-              external: true
-          
-          networks:
-            conexao-network:
-              external: true
-          EOF
+          SERVICE_NAME="conexao-chatbot_chatbot"
+          NETWORK_NAME="conexao-network-swarm"
+
+          echo "🔗 Garantindo rede $NETWORK_NAME (overlay attachable)"
+          docker network create --driver overlay --attachable "$NETWORK_NAME" 2>/dev/null || true
+
+          echo "🔍 Verificando existência do serviço $SERVICE_NAME"
+          if docker service ls --format '{{.Name}}' | grep -qx "$SERVICE_NAME"; then
+            echo "🔄 Serviço existe - UPDATE"
+            timeout 60s docker service update \
+              --image "$IMAGE" \
+              --env-add SPRING_PROFILES_ACTIVE=prod,azure \
+              --env-add TZ=America/Sao_Paulo \
+              --env-add SERVER_PORT=8080 \
+              --env-add SPRING_DATA_REDIS_HOST="${REDIS_HOST:-conexao-redis}" \
+              --env-add SPRING_DATA_REDIS_PORT="${REDIS_PORT:-6379}" \
+              --env-add SPRING_DATA_REDIS_DATABASE="${REDIS_DATABASE:-9}" \
+              --env-add JWT_ISSUER="${JWT_ISSUER:-https://conexaodesorte.com.br}" \
+              --env-add CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS:-*}" \
+              --env-add CORS_ALLOW_CREDENTIALS="${CORS_ALLOW_CREDENTIALS:-true}" \
+              --network-add "$NETWORK_NAME" \
+              --detach=false \
+              --update-parallelism 1 \
+              --update-delay 10s \
+              "$SERVICE_NAME"
+          else
+            echo "🆕 Serviço não existe - CREATE"
+            timeout 120s docker service create \
+              --name "$SERVICE_NAME" \
+              --replicas 1 \
+              --network "$NETWORK_NAME" \
+              --restart-condition any \
+              --restart-max-attempts 20 \
+              --restart-delay 2m \
+              --restart-window 15m \
+              --env SPRING_PROFILES_ACTIVE=prod,azure \
+              --env TZ=America/Sao_Paulo \
+              --env SERVER_PORT=8080 \
+              --env SPRING_DATA_REDIS_HOST="${REDIS_HOST:-conexao-redis}" \
+              --env SPRING_DATA_REDIS_PORT="${REDIS_PORT:-6379}" \
+              --env SPRING_DATA_REDIS_DATABASE="${REDIS_DATABASE:-9}" \
+              --env JWT_ISSUER="${JWT_ISSUER:-https://conexaodesorte.com.br}" \
+              --env CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS:-*}" \
+              --env CORS_ALLOW_CREDENTIALS="${CORS_ALLOW_CREDENTIALS:-true}" \
+              --publish published=8099,target=8080,protocol=tcp \
+              "$IMAGE"
+          fi
 
       - name: Aguardar Chatbot estar pronto
         run: |
