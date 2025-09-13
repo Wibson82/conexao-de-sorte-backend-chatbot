@@ -9,6 +9,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * ============================================================================
  * 🎰 ENTIDADE APOSTA R2DBC - SISTEMA DE APOSTAS JOGO DO BICHO
@@ -24,57 +26,75 @@ import java.time.LocalTime;
  * @version 1.0
  * @since 2024
  */
+@Schema(description = "Entidade que representa uma aposta no Jogo do Bicho.")
 @Table("tb_apostas")
 public class ApostaR2dbc {
     
     @Id
+    @Schema(description = "Identificador único da aposta", example = "1")
     private Long id;
     
+    @Schema(description = "Indica se a aposta é válida", example = "true")
     @Column("aposta_valida")
     private Boolean apostaValida;
     
+    @Schema(description = "Nome do usuário que realizou a aposta", example = "usuario123")
     @Column("usuario")
     private String usuario;
     
+    @Schema(description = "Identificador do cliente", example = "101")
     @Column("cliente")
     private Integer cliente;
     
+    @Schema(description = "Código único da aposta", example = "ABC123XYZ")
     @Column("codigo_unico")
     private String codigoUnico;
     
+    @Schema(description = "Data e hora de criação da aposta", example = "2025-01-01T10:00:00")
     @Column("data_criacao")
     private LocalDateTime dataCriacao;
     
+    @Schema(description = "Data em que a aposta foi feita", example = "2025-01-01")
     @Column("data_aposta")
     private LocalDate dataAposta;
     
+    @Schema(description = "Data em que a aposta foi efetivada", example = "2025-01-01")
     @Column("data_efetuada")
     private LocalDate dataEfetuada;
     
+    @Schema(description = "Hora em que a aposta foi efetivada", example = "10:30:00")
     @Column("hora_aposta_efetuada")
     private LocalTime horaApostaEfetuada;
     
+    @Schema(description = "Horário da aposta (ex: 1 para 10h, 2 para 12h)", example = "1")
     @Column("horario")
     private Integer horario;
     
+    @Schema(description = "Número da pule da aposta", example = "PUL12345")
     @Column("numero_pule")
     private String numeroPule;
     
+    @Schema(description = "Identificador do terminal onde a aposta foi registrada", example = "1")
     @Column("terminal")
     private Integer terminal;
     
+    @Schema(description = "Valor da aposta", example = "10.50")
     @Column("valor_da_aposta")
     private BigDecimal valorDaAposta;
     
+    @Schema(description = "Número da conta associada à aposta", example = "123456789")
     @Column("numero_conta")
     private String numeroConta;
     
+    @Schema(description = "Indica se a aposta foi feita por um parceiro", example = "false")
     @Column("parceiro")
     private Boolean parceiro;
     
+    @Schema(description = "Tipo de pagamento utilizado", example = "1")
     @Column("tipo_pagamento")
     private Integer tipoPagamento;
     
+    @Schema(description = "Crédito utilizado na aposta", example = "0")
     @Column("credito")
     private Integer credito;
 
