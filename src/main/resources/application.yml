@@ -50,7 +50,7 @@ spring:
     # Preferencialmente usa -database-r2dbc-url; mantém compat com -database-url
     url: ${conexao-de-sorte-database-r2dbc-url:${conexao-de-sorte-database-url:r2dbc:mysql://mysql-proxy:6033/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false}}
     username: ${conexao-de-sorte-database-username:}
-    password: ${conexao-de-sorte-database-password:}
+    password: ${conexao-de-sorte-redis-password:senha_teste}
     pool:
       initial-size: 5
       max-size: 20
@@ -65,7 +65,7 @@ spring:
     enabled: true
     url: ${conexao-de-sorte-database-jdbc-url:jdbc:mysql://mysql-proxy:6033/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false}
     user: ${conexao-de-sorte-database-username:}
-    password: ${conexao-de-sorte-database-password:}
+    password: ${conexao-de-sorte-redis-password:senha_teste}
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: false
@@ -75,9 +75,9 @@ spring:
   # Redis for betting sessions and cache (Spring Boot 3.5.5)
   data:
     redis:
-      host: ${conexao-de-sorte-redis-host:localhost}
+      host: ${conexao-de-sorte-redis-host:conexao-redis}
       port: ${SPRING_DATA_REDIS_PORT:6379}
-      password: ${SPRING_DATA_REDIS_PASSWORD:}
+      password: ${conexao-de-sorte-redis-password:senha_teste}
       database: ${SPRING_DATA_REDIS_DATABASE:5}
       timeout: 5s
       connect-timeout: 10s
@@ -93,7 +93,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: ${JWT_JWKS_URI:http://localhost:8081/.well-known/jwks.json}
+          jwk-set-uri: ${JWT_JWKS_URI:http://localhost: ${conexao-de-sorte-redis-host:conexao-redis}
           issuer-uri: ${JWT_ISSUER:https://auth.conexaodesorte.com}
           audiences: ${JWT_AUDIENCE:conexao-de-sorte}
           
@@ -124,7 +124,7 @@ server:
   ssl:
     enabled: ${SSL_ENABLED:false}
     key-store: ${SSL_KEYSTORE_PATH:}
-    key-store-password: ${SSL_KEYSTORE_PASSWORD:}
+    key-store-password: ${conexao-de-sorte-redis-password:senha_teste}
     key-store-type: PKCS12
     protocol: TLS
     enabled-protocols: [TLSv1.2, TLSv1.3]
@@ -308,12 +308,12 @@ spring:
   r2dbc:
     url: ${SPRING_R2DBC_URL}
     username: ${SPRING_R2DBC_USERNAME:${SPRING_DATASOURCE_USERNAME}}
-    password: ${SPRING_R2DBC_PASSWORD:${SPRING_DATASOURCE_PASSWORD}}
+    password: ${conexao-de-sorte-redis-password:senha_teste}
     
   flyway:
     url: ${SPRING_DATASOURCE_JDBC_URL:${SPRING_DATASOURCE_URL}}
     user: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    password: ${conexao-de-sorte-redis-password:senha_teste}
     
 server:
   port: 8087
