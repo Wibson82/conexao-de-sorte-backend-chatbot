@@ -1,0 +1,15 @@
+spring:
+  cloud:
+    azure:
+      keyvault:
+        secret:
+          # Desabilitado por padrão; habilitar via AZURE_KEYVAULT_ENABLED=true quando pronto
+          enabled: ${AZURE_KEYVAULT_ENABLED:false}
+      profile:
+        tenant-id: ${AZURE_TENANT_ID:}
+        subscription-id: ${AZURE_SUBSCRIPTION_ID:}
+        client-id: ${AZURE_CLIENT_ID:}
+
+# Este arquivo existe para compatibilidade com validadores de pipeline.
+# A aplicação usa apenas o perfil "production"; não há dependência operativa deste perfil.
+

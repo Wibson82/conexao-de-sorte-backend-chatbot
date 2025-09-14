@@ -26,6 +26,13 @@ services:
       start_period: 60s
     networks:
       - conexao-network-swarm
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=conexao-network-swarm"
+      - "traefik.http.routers.chatbot.rule=Host(`api.conexaodesorte.com.br`) && PathPrefix(`/rest/v1/jogo-bicho`)"
+      - "traefik.http.routers.chatbot.entrypoints=websecure"
+      - "traefik.http.routers.chatbot.tls.certresolver=letsencrypt"
+      - "traefik.http.services.chatbot.loadbalancer.server.port=8090"
     volumes:
       - ./logs:/app/logs
 
