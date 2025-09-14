@@ -7,7 +7,7 @@ services:
     container_name: chatbot-microservice
     restart: unless-stopped
     ports:
-      - "8090:8090"
+      - "8087:8087"
     environment:
       - SPRING_PROFILES_ACTIVE=production
       # Conexão à infraestrutura compartilhada (variáveis padronizadas)
@@ -31,7 +31,7 @@ services:
       - "traefik.http.routers.chatbot.rule=Host(`api.conexaodesorte.com.br`) && PathPrefix(`/rest/v1/jogo-bicho`)"
       - "traefik.http.routers.chatbot.entrypoints=websecure"
       - "traefik.http.routers.chatbot.tls.certresolver=letsencrypt"
-      - "traefik.http.services.chatbot.loadbalancer.server.port=8090"
+      - "traefik.http.services.chatbot.loadbalancer.server.port=8087"
     volumes:
       - ./logs:/app/logs
 
