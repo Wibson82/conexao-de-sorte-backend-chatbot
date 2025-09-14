@@ -52,7 +52,7 @@ public class SecurityConfig {
     // Constantes para valores repetidos
     private static final String CONTENT_TYPE_JSON = "application/json";
     private static final String HEADER_CONTENT_TYPE = "Content-Type";
-    private static final String PROFILE_PRODUCAO = "prod";
+    private static final String PROFILE_PRODUCAO = "production";
     private static final String ERRO_CORS_ORIGEM_INSEGURA = "Configuração CORS inválida: apenas origins HTTPS são permitidas em produção para apostas";
     
     // Templates de resposta JSON para apostas (sem exposição de detalhes)

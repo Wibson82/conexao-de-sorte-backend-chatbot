@@ -9,14 +9,16 @@
 spring:
   application:
     name: conexao-de-sorte-chatbot
-    
+  
   profiles:
-    default: prod
-    active: prod
+    # Somente perfil "production" conforme diretriz
+    default: production
+    active: production
   
   # Config import para Azure Key Vault secrets
   config:
     import:
+      - optional:configtree:/run/secrets/
       - optional:configtree:/etc/secrets/azure/
       - optional:configtree:/mnt/secrets/
       - optional:file:./secrets.properties
@@ -47,10 +49,11 @@ spring:
       
   # R2DBC Database configuration for reactive betting system (MySQL alinhado com demais serviços)
   r2dbc:
-    # Preferencialmente usa -database-r2dbc-url; mantém compat com -database-url
-    url: ${conexao-de-sorte-database-r2dbc-url:${conexao-de-sorte-database-url:r2dbc:mysql://mysql-proxy:6033/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false}}
-    username: ${conexao-de-sorte-database-username:}
-    password: ${conexao-de-sorte-redis-password:senha_teste}
+    # Preferir padrão SNAKE_CASE com fallback para kebab-case padronizado
+    url: ${DATABASE_R2DBC_URL:${conexao-de-sorte-database-r2dbc-url:${conexao-de-sorte-database-url:r2dbc:mysql://mysql-proxy:6033/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false}}}
+    username: ${DATABASE_USERNAME:${conexao-de-sorte-database-username:}}
+    # Senha obrigatória via segredo/variável
+    password: ${DATABASE_PASSWORD:${conexao-de-sorte-database-password:}}
     pool:
       initial-size: 5
       max-size: 20
@@ -63,9 +66,9 @@ spring:
   # Flyway for migrations (MySQL via JDBC)
   flyway:
     enabled: true
-    url: ${conexao-de-sorte-database-jdbc-url:jdbc:mysql://mysql-proxy:6033/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false}
-    user: ${conexao-de-sorte-database-username:}
-    password: ${conexao-de-sorte-redis-password:senha_teste}
+    url: ${DATABASE_JDBC_URL:${conexao-de-sorte-database-jdbc-url:jdbc:mysql://mysql-proxy:6033/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false}}
+    user: ${DATABASE_USERNAME:${conexao-de-sorte-database-username:}}
+    password: ${DATABASE_PASSWORD:${conexao-de-sorte-database-password:}}
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: false
@@ -75,10 +78,10 @@ spring:
   # Redis for betting sessions and cache (Spring Boot 3.5.5)
   data:
     redis:
-      host: ${conexao-de-sorte-redis-host:conexao-redis}
-      port: ${SPRING_DATA_REDIS_PORT:6379}
-      password: ${conexao-de-sorte-redis-password:senha_teste}
-      database: ${SPRING_DATA_REDIS_DATABASE:5}
+      host: ${REDIS_HOST:${conexao-de-sorte-redis-host:conexao-redis}}
+      port: ${REDIS_PORT:${conexao-de-sorte-redis-port:6379}}
+      password: ${REDIS_PASSWORD:${conexao-de-sorte-redis-password:}}
+      database: ${REDIS_DATABASE:${conexao-de-sorte-redis-database:5}}
       timeout: 5s
       connect-timeout: 10s
       lettuce:
@@ -93,8 +96,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: ${JWT_JWKS_URI:http://localhost: ${conexao-de-sorte-redis-host:conexao-redis}
-          issuer-uri: ${JWT_ISSUER:https://auth.conexaodesorte.com}
+          jwk-set-uri: ${JWT_JWKS_URI:https://auth.conexaodesorte.com.br/realms/conexao-de-sorte/protocol/openid-connect/certs}
+          issuer-uri: ${JWT_ISSUER:https://auth.conexaodesorte.com.br/realms/conexao-de-sorte}
           audiences: ${JWT_AUDIENCE:conexao-de-sorte}
           
   # WebFlux configuration (Spring Boot 3.5.5)
@@ -106,7 +109,7 @@ spring:
 
 # Server configuration (Spring Boot 3.5.5)
 server:
-  port: ${conexao-de-sorte-server-port:8087}
+  port: ${CONEXAO_DE_SORTE_SERVER_PORT:8090}
   shutdown: graceful
   error:
     include-message: never
@@ -124,7 +127,7 @@ server:
   ssl:
     enabled: ${SSL_ENABLED:false}
     key-store: ${SSL_KEYSTORE_PATH:}
-    key-store-password: ${conexao-de-sorte-redis-password:senha_teste}
+    key-store-password: ${conexao-de-sorte-ssl-keystore-password:}
     key-store-type: PKCS12
     protocol: TLS
     enabled-protocols: [TLSv1.2, TLSv1.3]
@@ -246,7 +249,7 @@ management:
   metrics:
     tags:
       service: conexao-de-sorte-chatbot
-      environment: ${SPRING_PROFILES_ACTIVE:prod}
+      environment: ${SPRING_PROFILES_ACTIVE:production}
     distribution:
       percentiles-histogram:
         "[http.server.requests]": true
@@ -303,20 +306,20 @@ springdoc:
 spring:
   config:
     activate:
-      on-profile: prod
+      on-profile: production
       
   r2dbc:
-    url: ${SPRING_R2DBC_URL}
-    username: ${SPRING_R2DBC_USERNAME:${SPRING_DATASOURCE_USERNAME}}
-    password: ${conexao-de-sorte-redis-password:senha_teste}
+    url: ${DATABASE_R2DBC_URL:${SPRING_R2DBC_URL}}
+    username: ${DATABASE_USERNAME:${SPRING_R2DBC_USERNAME:${SPRING_DATASOURCE_USERNAME}}}
+    password: ${DATABASE_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
     
   flyway:
-    url: ${SPRING_DATASOURCE_JDBC_URL:${SPRING_DATASOURCE_URL}}
-    user: ${SPRING_DATASOURCE_USERNAME}
-    password: ${conexao-de-sorte-redis-password:senha_teste}
+    url: ${DATABASE_JDBC_URL:${SPRING_DATASOURCE_JDBC_URL:${SPRING_DATASOURCE_URL}}}
+    user: ${DATABASE_USERNAME:${SPRING_DATASOURCE_USERNAME}}
+    password: ${DATABASE_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
     
 server:
-  port: 8087
+  port: ${CONEXAO_DE_SORTE_SERVER_PORT:8090}
   ssl:
     enabled: ${SSL_ENABLED:false}
     
