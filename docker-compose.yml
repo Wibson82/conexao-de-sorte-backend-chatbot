@@ -25,13 +25,27 @@ services:
       start_period: 60s
     networks:
       - conexao-network-swarm
+    # ==========================================================================
+    # 🏷️ LABELS PARA INTEGRAÇÃO COM GATEWAY - NOVO PADRÃO
+    # ==========================================================================
     labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=conexao-network-swarm"
-      - "traefik.http.routers.chatbot.rule=Host(`api.conexaodesorte.com.br`) && PathPrefix(`/rest/v1/jogo-bicho`)"
-      - "traefik.http.routers.chatbot.entrypoints=websecure"
-      - "traefik.http.routers.chatbot.tls.certresolver=letsencrypt"
-      - "traefik.http.services.chatbot.loadbalancer.server.port=8087"
+      # Habilitar descoberta pelo Gateway (não mais diretamente pelo Traefik)
+      - "traefik.enable=false"  # Gateway será o ponto de entrada
+      - "gateway.enable=true"   # Descoberta pelo Gateway
+      - "gateway.service.name=conexao-chatbot"
+      - "gateway.service.port=8087"
+      - "gateway.service.path=/rest/chatbot"
+      - "gateway.health.path=/actuator/health"
+
+      # Network para comunicação interna
+      - "com.docker.network.name=conexao-network-swarm"
+
+      # Metadata do serviço
+      - "org.opencontainers.image.title=Conexão de Sorte - Chatbot IA"
+      - "org.opencontainers.image.description=Microserviço de chatbot e IA para jogo do bicho"
+      - "org.opencontainers.image.version=1.0.0"
+      - "microservice.type=business"
+      - "microservice.category=ai-chat"
     volumes:
       - ./logs:/app/logs
 
