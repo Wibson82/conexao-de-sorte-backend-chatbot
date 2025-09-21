@@ -19,7 +19,7 @@
     <description>Sistema de apostas Jogo do Bicho com chatbot interativo e API REST reativa</description>
 
     <properties>
-        <java.version>24</java.version>
+        <java.version>25</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         
         <!-- Dependências para documentação -->
