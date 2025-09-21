@@ -1,13 +1,8 @@
 
 services:
   chatbot-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: chatbot-microservice
+    image: ghcr.io/wibson82/conexao-de-sorte-backend-chatbot:latest
     restart: unless-stopped
-    ports:
-      - "8092:8092"
     environment:
       - SPRING_PROFILES_ACTIVE=production
       # Conexão à infraestrutura compartilhada (variáveis padronizadas)
@@ -28,6 +23,15 @@ services:
       conexao-network-swarm:
         aliases:
           - conexao-chatbot
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
     # ==========================================================================
     # 🏷️ LABELS PARA INTEGRAÇÃO COM GATEWAY - NOVO PADRÃO
     # ==========================================================================
@@ -50,8 +54,11 @@ services:
       - "microservice.type=business"
       - "microservice.category=ai-chat"
     volumes:
-      - ./logs:/app/logs
+      - chatbot-logs:/app/logs
 
 networks:
   conexao-network-swarm:
     external: true
+
+volumes:
+  chatbot-logs:
