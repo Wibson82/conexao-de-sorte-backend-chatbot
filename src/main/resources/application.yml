@@ -301,42 +301,8 @@ springdoc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
 
----
-# Production Profile (Spring Boot 3.5.5)
-spring:
-  config:
-    activate:
-      on-profile: production
-      
-  r2dbc:
-    url: ${DATABASE_R2DBC_URL:${SPRING_R2DBC_URL}}
-    username: ${DATABASE_USERNAME:${SPRING_R2DBC_USERNAME:${SPRING_DATASOURCE_USERNAME}}}
-    password: ${DATABASE_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
-    
-  flyway:
-    url: ${DATABASE_JDBC_URL:${SPRING_DATASOURCE_JDBC_URL:${SPRING_DATASOURCE_URL}}}
-    user: ${DATABASE_USERNAME:${SPRING_DATASOURCE_USERNAME}}
-    password: ${DATABASE_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
-    
-server:
-  port: ${CONEXAO_DE_SORTE_SERVER_PORT:8090}
-  ssl:
-    enabled: ${SSL_ENABLED:false}
-    
-jogo-bicho:
-  seguranca:
+  production:
     validacao-integridade: true
     auditoria-apostas: true
-    
-management:
-  endpoint:
-    health:
-      show-details: when-authorized
-      
-logging:
-  level:
-    root: INFO
-    "[br.tec.facilitaservicos.chatbot]": INFO
-    
-rate-limit:
-  default-requests-per-minute: 15
+    rate-limit-producao: 15
+    log-level: INFO
