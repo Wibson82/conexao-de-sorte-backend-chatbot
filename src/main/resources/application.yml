@@ -47,13 +47,12 @@ spring:
     deserialization:
       fail-on-unknown-properties: false
       
-  # R2DBC Database configuration for reactive betting system (MySQL alinhado com demais serviços)
+  # R2DBC Database configuration for reactive betting system
   r2dbc:
-    # Preferir padrão SNAKE_CASE com fallback para kebab-case padronizado
-    url: ${DATABASE_R2DBC_URL:${conexao-de-sorte-database-r2dbc-url:${conexao-de-sorte-database-url:r2dbc:mysql://mysql-proxy:6033/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false}}}
-    username: ${DATABASE_USERNAME:${conexao-de-sorte-database-username:}}
-    # Senha obrigatória via segredo/variável
-    password: ${DATABASE_PASSWORD:${conexao-de-sorte-database-password:}}
+    # Padrão concatenação: secret base + parâmetros específicos
+    url: ${conexao-de-sorte-database-r2dbc-url}/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false&serverTimezone=America/Sao_Paulo
+    username: ${conexao-de-sorte-database-username}
+    password: ${conexao-de-sorte-database-password}
     pool:
       initial-size: 5
       max-size: 20
@@ -66,22 +65,22 @@ spring:
   # Flyway for migrations (MySQL via JDBC)
   flyway:
     enabled: true
-    url: ${DATABASE_JDBC_URL:${conexao-de-sorte-database-jdbc-url:jdbc:mysql://mysql-proxy:6033/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false}}
-    user: ${DATABASE_USERNAME:${conexao-de-sorte-database-username:}}
-    password: ${DATABASE_PASSWORD:${conexao-de-sorte-database-password:}}
+    url: ${conexao-de-sorte-database-jdbc-url}/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false&serverTimezone=America/Sao_Paulo
+    user: ${conexao-de-sorte-database-username}
+    password: ${conexao-de-sorte-database-password}
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: false
     sql-migration-suffixes: .sql
     baseline-version: 1
     
-  # Redis for betting sessions and cache (Spring Boot 3.5.5)
+  # Redis for betting sessions and cache
   data:
     redis:
-      host: ${REDIS_HOST:${conexao-de-sorte-redis-host:conexao-redis}}
-      port: ${REDIS_PORT:${conexao-de-sorte-redis-port:6379}}
-      password: ${REDIS_PASSWORD:${conexao-de-sorte-redis-password:}}
-      database: ${REDIS_DATABASE:${conexao-de-sorte-redis-database:5}}
+      host: ${conexao-de-sorte-redis-host:conexao-redis}
+      port: ${conexao-de-sorte-redis-port:6379}
+      password: ${conexao-de-sorte-redis-password}
+      database: ${conexao-de-sorte-redis-database:5}  # DB 5 para chatbot
       timeout: 5s
       connect-timeout: 10s
       lettuce:
