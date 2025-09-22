@@ -47,10 +47,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar Java 24 (Temurin)
+      - name: Configurar Java 25 (Corretto)
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: corretto
           java-version: '25'
           cache: maven
 

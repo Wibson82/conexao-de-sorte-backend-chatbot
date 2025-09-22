@@ -1,7 +1,10 @@
 # ============================================================================
 # 🐳 DOCKERFILE MULTI-ESTÁGIO - CHATBOT JOGO DO BICHO
 # ============================================================================
-FROM maven:3.9.11-eclipse-temurin-24-alpine AS builder
+FROM amazoncorretto:25-alpine3.22 AS builder
+
+# Instalar Maven
+RUN apk add --no-cache maven
 WORKDIR /build
 
 COPY pom.xml .
@@ -12,7 +15,7 @@ RUN --mount=type=cache,target=/root/.m2 mvn -q -B -DskipTests dependency:go-offl
 COPY src/ src/
 RUN --mount=type=cache,target=/root/.m2 mvn -q -B -DskipTests clean package
 
-FROM eclipse-temurin:24-jre-alpine
+FROM amazoncorretto:25-alpine3.22
 RUN apk add --no-cache tzdata curl dumb-init && rm -rf /var/cache/apk/*
 ENV TZ=America/Sao_Paulo
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
