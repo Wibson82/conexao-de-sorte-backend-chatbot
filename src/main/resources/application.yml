@@ -108,7 +108,7 @@ spring:
 
 # Server configuration (Spring Boot 3.5.5)
 server:
-  port: ${CONEXAO_DE_SORTE_SERVER_PORT:8090}
+  port: ${SERVER_PORT:8087}
   shutdown: graceful
   error:
     include-message: never
