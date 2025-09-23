@@ -52,7 +52,7 @@ services:
       - "traefik.enable=false"  # Gateway será o ponto de entrada
       - "gateway.enable=true"   # Descoberta pelo Gateway
       - "gateway.service.name=conexao-chatbot"
-      - "gateway.service.port=8087"
+      - "gateway.service.port=8092"
       - "gateway.service.path=/rest/chatbot"
       - "gateway.health.path=/actuator/health"
 
