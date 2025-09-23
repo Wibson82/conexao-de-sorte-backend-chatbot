@@ -156,7 +156,7 @@ jobs:
     if: |
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production'))
-    runs-on: [ self-hosted, Linux, X64, conexao, conexao-de-sorte-backend-chatbot ]
+    runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 25
     permissions:
       id-token: write
