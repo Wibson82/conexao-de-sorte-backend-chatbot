@@ -47,12 +47,25 @@ jobs:
       - name: Security Validation
         run: |
           echo "🔒 Verificando segurança da configuração..."
-          if grep -R --line-number "password\s*:\s*" docker-compose.yml | grep -v "\${" | grep -v "#" | grep -v "external:"; then
-            echo "❌ Found potential hardcoded passwords"
-            exit 1
-          else
-            echo "✅ No hardcoded passwords found"
+          # Verificar se há senhas hardcoded (não em secrets externos)
+          hardcoded_passwords=$(grep -R --line-number "password\s*:\s*" docker-compose.yml | grep -v "\${" | grep -v "#" | grep -v "external:" || true)
+
+          if [[ -n "$hardcoded_passwords" ]]; then
+            # Verificar se as linhas com password são seguidas por external: true
+            while IFS= read -r line; do
+              line_num=$(echo "$line" | cut -d: -f1)
+              next_line_num=$((line_num + 1))
+              next_line=$(sed -n "${next_line_num}p" docker-compose.yml)
+
+              if [[ ! "$next_line" =~ external:[[:space:]]*true ]]; then
+                echo "❌ Found potential hardcoded password at line $line_num: $line"
+                echo "❌ Next line: $next_line"
+                exit 1
+              fi
+            done <<< "$hardcoded_passwords"
           fi
+
+          echo "✅ No hardcoded passwords found - all passwords use external secrets"
 
       - name: 🔎 Validar OIDC Azure
         id: check_secrets
@@ -175,57 +188,61 @@ jobs:
         if: ${{ env.CONEXAO_DE_SORTE_DATABASE_PASSWORD != '' && env.CONEXAO_DE_SORTE_REDIS_PASSWORD != '' && env.CONEXAO_DE_SORTE_JWT_SECRET != '' }}
         run: |
           echo "Creating Docker secrets..."
-          # Verificar se secrets existem e forçar remoção se necessário
-          if docker secret ls --format "{{.Name}}" | grep -q "^DATABASE_URL$"; then
-            echo "⚠️ Secret DATABASE_URL já existe - removendo serviços dependentes primeiro..."
+
+          # Função para criar secret apenas se não existir
+          create_secret_if_not_exists() {
+            local secret_name="$1"
+            local secret_value="$2"
+
+            if [[ -z "$secret_value" ]]; then
+              echo "⚠️ Secret $secret_name tem valor vazio - pulando"
+              return
+            fi
+
+            if docker secret ls --format "{{.Name}}" | grep -q "^${secret_name}$"; then
+              echo "ℹ️ Secret ${secret_name} já existe - reutilizando"
+            else
+              printf "$secret_value" | docker secret create "$secret_name" -
+              echo "✅ Secret ${secret_name} criado"
+            fi
+          }
+
+          # Remover apenas serviços específicos do chatbot se necessário
+          if docker service ls --filter name="conexao-chatbot" --format "{{.Name}}" | grep -q "conexao-chatbot"; then
+            echo "⚠️ Removendo serviços do chatbot para atualização..."
             docker service ls --filter name="conexao-chatbot" --format "{{.Name}}" | xargs -r docker service rm || true
             sleep 5
-            docker secret rm DATABASE_URL || true
           fi
-          # Remover todos os secrets existentes do Chatbot
-          secrets_to_remove=(
-            "DATABASE_URL" "DATABASE_JDBC_URL" "DATABASE_R2DBC_URL" "DATABASE_USERNAME" "DATABASE_PASSWORD"
-            "REDIS_HOST" "REDIS_PORT" "REDIS_PASSWORD" "REDIS_DATABASE"
-            "JWT_SECRET" "JWT_ISSUER" "JWT_PRIVATEKEY" "JWT_PUBLICKEY" "JWT_SIGNING_KEY" "JWT_VERIFICATION_KEY" "JWT_JWKS_URI" "JWT_KEY_ID"
-            "CORS_ALLOWED_ORIGINS" "CORS_ALLOW_CREDENTIALS"
-            "SSL_ENABLED" "SSL_KEYSTORE_PATH" "SSL_KEYSTORE_PASSWORD"
-            "ENCRYPTION_MASTER_KEY" "ENCRYPTION_MASTER_PASSWORD" "ENCRYPTION_BACKUP_KEY"
-            "SERVER_PORT"
-          )
-          for secret in "${secrets_to_remove[@]}"; do
-            if docker secret ls --format "{{.Name}}" | grep -q "^${secret}$"; then
-              docker secret rm "$secret" || true
-            fi
-          done
 
-          # Create secrets from environment variables fetched from Key Vault
-          printf "$CONEXAO_DE_SORTE_DATABASE_URL" | docker secret create DATABASE_URL -
-          printf "$CONEXAO_DE_SORTE_DATABASE_JDBC_URL" | docker secret create DATABASE_JDBC_URL -
-          printf "$CONEXAO_DE_SORTE_DATABASE_R2DBC_URL" | docker secret create DATABASE_R2DBC_URL -
-          printf "$CONEXAO_DE_SORTE_DATABASE_USERNAME" | docker secret create DATABASE_USERNAME -
-          printf "$CONEXAO_DE_SORTE_DATABASE_PASSWORD" | docker secret create DATABASE_PASSWORD -
-          printf "$CONEXAO_DE_SORTE_REDIS_HOST" | docker secret create REDIS_HOST -
-          printf "$CONEXAO_DE_SORTE_REDIS_PORT" | docker secret create REDIS_PORT -
-          printf "$CONEXAO_DE_SORTE_REDIS_PASSWORD" | docker secret create REDIS_PASSWORD -
-          printf "$CONEXAO_DE_SORTE_REDIS_DATABASE" | docker secret create REDIS_DATABASE -
-          printf "$CONEXAO_DE_SORTE_JWT_SECRET" | docker secret create JWT_SECRET -
-          printf "$CONEXAO_DE_SORTE_JWT_ISSUER" | docker secret create JWT_ISSUER -
-          printf "$CONEXAO_DE_SORTE_JWT_PRIVATEKEY" | docker secret create JWT_PRIVATEKEY -
-          printf "$CONEXAO_DE_SORTE_JWT_PUBLICKEY" | docker secret create JWT_PUBLICKEY -
-          printf "$CONEXAO_DE_SORTE_JWT_SIGNING_KEY" | docker secret create JWT_SIGNING_KEY -
-          printf "$CONEXAO_DE_SORTE_JWT_VERIFICATION_KEY" | docker secret create JWT_VERIFICATION_KEY -
-          printf "$CONEXAO_DE_SORTE_JWT_JWKS_URI" | docker secret create JWT_JWKS_URI -
-          printf "$CONEXAO_DE_SORTE_JWT_KEY_ID" | docker secret create JWT_KEY_ID -
-          printf "$CONEXAO_DE_SORTE_CORS_ALLOWED_ORIGINS" | docker secret create CORS_ALLOWED_ORIGINS -
-          printf "$CONEXAO_DE_SORTE_CORS_ALLOW_CREDENTIALS" | docker secret create CORS_ALLOW_CREDENTIALS -
-          printf "$CONEXAO_DE_SORTE_SSL_ENABLED" | docker secret create SSL_ENABLED -
-          printf "$CONEXAO_DE_SORTE_SSL_KEYSTORE_PATH" | docker secret create SSL_KEYSTORE_PATH -
-          printf "$CONEXAO_DE_SORTE_SSL_KEYSTORE_PASSWORD" | docker secret create SSL_KEYSTORE_PASSWORD -
-          printf "$CONEXAO_DE_SORTE_ENCRYPTION_MASTER_KEY" | docker secret create ENCRYPTION_MASTER_KEY -
-          printf "$CONEXAO_DE_SORTE_ENCRYPTION_MASTER_PASSWORD" | docker secret create ENCRYPTION_MASTER_PASSWORD -
-          printf "$CONEXAO_DE_SORTE_ENCRYPTION_BACKUP_KEY" | docker secret create ENCRYPTION_BACKUP_KEY -
-          printf "$CONEXAO_DE_SORTE_SERVER_PORT" | docker secret create SERVER_PORT -
-          echo "Docker secrets created."
+          # Criar secrets apenas se não existirem (evita conflitos com outros serviços)
+          create_secret_if_not_exists "DATABASE_URL" "$CONEXAO_DE_SORTE_DATABASE_URL"
+          create_secret_if_not_exists "DATABASE_JDBC_URL" "$CONEXAO_DE_SORTE_DATABASE_JDBC_URL"
+          create_secret_if_not_exists "DATABASE_R2DBC_URL" "$CONEXAO_DE_SORTE_DATABASE_R2DBC_URL"
+          create_secret_if_not_exists "DATABASE_USERNAME" "$CONEXAO_DE_SORTE_DATABASE_USERNAME"
+          create_secret_if_not_exists "DATABASE_PASSWORD" "$CONEXAO_DE_SORTE_DATABASE_PASSWORD"
+          create_secret_if_not_exists "REDIS_HOST" "$CONEXAO_DE_SORTE_REDIS_HOST"
+          create_secret_if_not_exists "REDIS_PORT" "$CONEXAO_DE_SORTE_REDIS_PORT"
+          create_secret_if_not_exists "REDIS_PASSWORD" "$CONEXAO_DE_SORTE_REDIS_PASSWORD"
+          create_secret_if_not_exists "REDIS_DATABASE" "$CONEXAO_DE_SORTE_REDIS_DATABASE"
+          create_secret_if_not_exists "JWT_SECRET" "$CONEXAO_DE_SORTE_JWT_SECRET"
+          create_secret_if_not_exists "JWT_ISSUER" "$CONEXAO_DE_SORTE_JWT_ISSUER"
+          create_secret_if_not_exists "JWT_PRIVATEKEY" "$CONEXAO_DE_SORTE_JWT_PRIVATEKEY"
+          create_secret_if_not_exists "JWT_PUBLICKEY" "$CONEXAO_DE_SORTE_JWT_PUBLICKEY"
+          create_secret_if_not_exists "JWT_SIGNING_KEY" "$CONEXAO_DE_SORTE_JWT_SIGNING_KEY"
+          create_secret_if_not_exists "JWT_VERIFICATION_KEY" "$CONEXAO_DE_SORTE_JWT_VERIFICATION_KEY"
+          create_secret_if_not_exists "JWT_JWKS_URI" "$CONEXAO_DE_SORTE_JWT_JWKS_URI"
+          create_secret_if_not_exists "JWT_KEY_ID" "$CONEXAO_DE_SORTE_JWT_KEY_ID"
+          create_secret_if_not_exists "CORS_ALLOWED_ORIGINS" "$CONEXAO_DE_SORTE_CORS_ALLOWED_ORIGINS"
+          create_secret_if_not_exists "CORS_ALLOW_CREDENTIALS" "$CONEXAO_DE_SORTE_CORS_ALLOW_CREDENTIALS"
+          create_secret_if_not_exists "SSL_ENABLED" "$CONEXAO_DE_SORTE_SSL_ENABLED"
+          create_secret_if_not_exists "SSL_KEYSTORE_PATH" "$CONEXAO_DE_SORTE_SSL_KEYSTORE_PATH"
+          create_secret_if_not_exists "SSL_KEYSTORE_PASSWORD" "$CONEXAO_DE_SORTE_SSL_KEYSTORE_PASSWORD"
+          create_secret_if_not_exists "ENCRYPTION_MASTER_KEY" "$CONEXAO_DE_SORTE_ENCRYPTION_MASTER_KEY"
+          create_secret_if_not_exists "ENCRYPTION_MASTER_PASSWORD" "$CONEXAO_DE_SORTE_ENCRYPTION_MASTER_PASSWORD"
+          create_secret_if_not_exists "ENCRYPTION_BACKUP_KEY" "$CONEXAO_DE_SORTE_ENCRYPTION_BACKUP_KEY"
+          create_secret_if_not_exists "SERVER_PORT" "$CONEXAO_DE_SORTE_SERVER_PORT"
+
+          echo "Docker secrets process completed."
 
       - name: 🔍 Preparar ambiente de deploy
         run: |
@@ -403,9 +420,21 @@ jobs:
           # Configurar variáveis de ambiente para o deploy
           export COMPOSE_PROJECT_NAME="${STACK_NAME}"
 
-          # Pull da imagem mais recente
-          echo "📥 Fazendo pull da imagem mais recente..."
-          docker pull ghcr.io/wibson82/conexao-de-sorte-backend-chatbot:latest || echo "⚠️ Falha no pull - usando imagem local"
+          # Tentar pull da imagem mais recente
+          echo "📥 Tentando pull da imagem mais recente..."
+          if docker pull ghcr.io/wibson82/conexao-de-sorte-backend-chatbot:latest; then
+            echo "✅ Pull da imagem realizado com sucesso"
+          else
+            echo "⚠️ Falha no pull - tentando build local..."
+            if [[ -f "Dockerfile" ]]; then
+              echo "🔨 Fazendo build da imagem localmente..."
+              docker build -t ghcr.io/wibson82/conexao-de-sorte-backend-chatbot:latest .
+              echo "✅ Build local concluído"
+            else
+              echo "❌ Dockerfile não encontrado - não é possível fazer build"
+              exit 1
+            fi
+          fi
 
           # Deploy usando Docker Stack
           echo "🔄 Executando deploy stack..."
