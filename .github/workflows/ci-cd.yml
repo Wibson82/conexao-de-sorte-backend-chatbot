@@ -156,12 +156,11 @@ jobs:
             "conexao-de-sorte-encryption-backup-key"
             "conexao-de-sorte-server-port"
           )
-
           for secret_name in "${SECRETS_LIST[@]}"; do
             echo "Fetching secret: $secret_name"
-            
+
             secret_value=$(az keyvault secret show --vault-name "${{ secrets.AZURE_KEYVAULT_NAME }}" --name "$secret_name" --query "value" -o tsv 2>/dev/null)
-            
+
             if [[ -n "$secret_value" ]]; then
               echo "::add-mask::$secret_value"
               env_var_name=$(echo "$secret_name" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
@@ -176,71 +175,61 @@ jobs:
         if: ${{ env.CONEXAO_DE_SORTE_DATABASE_PASSWORD != '' && env.CONEXAO_DE_SORTE_REDIS_PASSWORD != '' && env.CONEXAO_DE_SORTE_JWT_SECRET != '' }}
         run: |
           echo "Creating Docker secrets..."
-
-          # Remover serviços dependentes primeiro se existirem
-          if docker service ls --filter name="conexao-chatbot" --format "{{.Name}}" | grep -q "conexao-chatbot"; then
-            echo "⚠️ Removendo serviços dependentes do Chatbot primeiro..."
+          # Verificar se secrets existem e forçar remoção se necessário
+          if docker secret ls --format "{{.Name}}" | grep -q "^DATABASE_URL$"; then
+            echo "⚠️ Secret DATABASE_URL já existe - removendo serviços dependentes primeiro..."
             docker service ls --filter name="conexao-chatbot" --format "{{.Name}}" | xargs -r docker service rm || true
             sleep 5
+            docker secret rm DATABASE_URL || true
           fi
-
-          # Lista completa de secrets para o Chatbot (26 secrets)
-          declare -A SECRETS_MAP=(
-            ["conexao-de-sorte-database-url"]="$CONEXAO_DE_SORTE_DATABASE_URL"
-            ["conexao-de-sorte-database-jdbc-url"]="$CONEXAO_DE_SORTE_DATABASE_JDBC_URL"
-            ["conexao-de-sorte-database-r2dbc-url"]="$CONEXAO_DE_SORTE_DATABASE_R2DBC_URL"
-            ["conexao-de-sorte-database-username"]="$CONEXAO_DE_SORTE_DATABASE_USERNAME"
-            ["conexao-de-sorte-database-password"]="$CONEXAO_DE_SORTE_DATABASE_PASSWORD"
-            ["conexao-de-sorte-redis-host"]="$CONEXAO_DE_SORTE_REDIS_HOST"
-            ["conexao-de-sorte-redis-port"]="$CONEXAO_DE_SORTE_REDIS_PORT"
-            ["conexao-de-sorte-redis-password"]="$CONEXAO_DE_SORTE_REDIS_PASSWORD"
-            ["conexao-de-sorte-redis-database"]="$CONEXAO_DE_SORTE_REDIS_DATABASE"
-            ["conexao-de-sorte-jwt-secret"]="$CONEXAO_DE_SORTE_JWT_SECRET"
-            ["conexao-de-sorte-jwt-issuer"]="$CONEXAO_DE_SORTE_JWT_ISSUER"
-            ["conexao-de-sorte-jwt-privateKey"]="$CONEXAO_DE_SORTE_JWT_PRIVATEKEY"
-            ["conexao-de-sorte-jwt-publicKey"]="$CONEXAO_DE_SORTE_JWT_PUBLICKEY"
-            ["conexao-de-sorte-jwt-signing-key"]="$CONEXAO_DE_SORTE_JWT_SIGNING_KEY"
-            ["conexao-de-sorte-jwt-verification-key"]="$CONEXAO_DE_SORTE_JWT_VERIFICATION_KEY"
-            ["conexao-de-sorte-jwt-jwks-uri"]="$CONEXAO_DE_SORTE_JWT_JWKS_URI"
-            ["conexao-de-sorte-jwt-key-id"]="$CONEXAO_DE_SORTE_JWT_KEY_ID"
-            ["conexao-de-sorte-cors-allowed-origins"]="$CONEXAO_DE_SORTE_CORS_ALLOWED_ORIGINS"
-            ["conexao-de-sorte-cors-allow-credentials"]="$CONEXAO_DE_SORTE_CORS_ALLOW_CREDENTIALS"
-            ["conexao-de-sorte-ssl-enabled"]="$CONEXAO_DE_SORTE_SSL_ENABLED"
-            ["conexao-de-sorte-ssl-keystore-path"]="$CONEXAO_DE_SORTE_SSL_KEYSTORE_PATH"
-            ["conexao-de-sorte-ssl-keystore-password"]="$CONEXAO_DE_SORTE_SSL_KEYSTORE_PASSWORD"
-            ["conexao-de-sorte-encryption-master-key"]="$CONEXAO_DE_SORTE_ENCRYPTION_MASTER_KEY"
-            ["conexao-de-sorte-encryption-master-password"]="$CONEXAO_DE_SORTE_ENCRYPTION_MASTER_PASSWORD"
-            ["conexao-de-sorte-encryption-backup-key"]="$CONEXAO_DE_SORTE_ENCRYPTION_BACKUP_KEY"
-            ["conexao-de-sorte-server-port"]="$CONEXAO_DE_SORTE_SERVER_PORT"
+          # Remover todos os secrets existentes do Chatbot
+          secrets_to_remove=(
+            "DATABASE_URL" "DATABASE_JDBC_URL" "DATABASE_R2DBC_URL" "DATABASE_USERNAME" "DATABASE_PASSWORD"
+            "REDIS_HOST" "REDIS_PORT" "REDIS_PASSWORD" "REDIS_DATABASE"
+            "JWT_SECRET" "JWT_ISSUER" "JWT_PRIVATEKEY" "JWT_PUBLICKEY" "JWT_SIGNING_KEY" "JWT_VERIFICATION_KEY" "JWT_JWKS_URI" "JWT_KEY_ID"
+            "CORS_ALLOWED_ORIGINS" "CORS_ALLOW_CREDENTIALS"
+            "SSL_ENABLED" "SSL_KEYSTORE_PATH" "SSL_KEYSTORE_PASSWORD"
+            "ENCRYPTION_MASTER_KEY" "ENCRYPTION_MASTER_PASSWORD" "ENCRYPTION_BACKUP_KEY"
+            "SERVER_PORT"
           )
-
-          # Processar cada secret
-          for secret_name in "${!SECRETS_MAP[@]}"; do
-            secret_value="${SECRETS_MAP[$secret_name]}"
-            docker_secret_name=$(echo "$secret_name" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
-
-            if [[ -n "$secret_value" ]]; then
-              # Remover secret existente se necessário
-              if docker secret ls --format "{{.Name}}" | grep -q "^${docker_secret_name}$"; then
-                echo "⚠️ Removendo secret existente: $docker_secret_name"
-                docker secret rm "$docker_secret_name" || true
-                sleep 1
-              fi
-
-              # Criar novo secret
-              printf "$secret_value" | docker secret create "$docker_secret_name" -
-              echo "✅ Secret criado: $docker_secret_name"
-            else
-              echo "⚠️ Secret vazio ou não encontrado: $secret_name"
+          for secret in "${secrets_to_remove[@]}"; do
+            if docker secret ls --format "{{.Name}}" | grep -q "^${secret}$"; then
+              docker secret rm "$secret" || true
             fi
           done
 
+          # Create secrets from environment variables fetched from Key Vault
+          printf "$CONEXAO_DE_SORTE_DATABASE_URL" | docker secret create DATABASE_URL -
+          printf "$CONEXAO_DE_SORTE_DATABASE_JDBC_URL" | docker secret create DATABASE_JDBC_URL -
+          printf "$CONEXAO_DE_SORTE_DATABASE_R2DBC_URL" | docker secret create DATABASE_R2DBC_URL -
+          printf "$CONEXAO_DE_SORTE_DATABASE_USERNAME" | docker secret create DATABASE_USERNAME -
+          printf "$CONEXAO_DE_SORTE_DATABASE_PASSWORD" | docker secret create DATABASE_PASSWORD -
+          printf "$CONEXAO_DE_SORTE_REDIS_HOST" | docker secret create REDIS_HOST -
+          printf "$CONEXAO_DE_SORTE_REDIS_PORT" | docker secret create REDIS_PORT -
+          printf "$CONEXAO_DE_SORTE_REDIS_PASSWORD" | docker secret create REDIS_PASSWORD -
+          printf "$CONEXAO_DE_SORTE_REDIS_DATABASE" | docker secret create REDIS_DATABASE -
+          printf "$CONEXAO_DE_SORTE_JWT_SECRET" | docker secret create JWT_SECRET -
+          printf "$CONEXAO_DE_SORTE_JWT_ISSUER" | docker secret create JWT_ISSUER -
+          printf "$CONEXAO_DE_SORTE_JWT_PRIVATEKEY" | docker secret create JWT_PRIVATEKEY -
+          printf "$CONEXAO_DE_SORTE_JWT_PUBLICKEY" | docker secret create JWT_PUBLICKEY -
+          printf "$CONEXAO_DE_SORTE_JWT_SIGNING_KEY" | docker secret create JWT_SIGNING_KEY -
+          printf "$CONEXAO_DE_SORTE_JWT_VERIFICATION_KEY" | docker secret create JWT_VERIFICATION_KEY -
+          printf "$CONEXAO_DE_SORTE_JWT_JWKS_URI" | docker secret create JWT_JWKS_URI -
+          printf "$CONEXAO_DE_SORTE_JWT_KEY_ID" | docker secret create JWT_KEY_ID -
+          printf "$CONEXAO_DE_SORTE_CORS_ALLOWED_ORIGINS" | docker secret create CORS_ALLOWED_ORIGINS -
+          printf "$CONEXAO_DE_SORTE_CORS_ALLOW_CREDENTIALS" | docker secret create CORS_ALLOW_CREDENTIALS -
+          printf "$CONEXAO_DE_SORTE_SSL_ENABLED" | docker secret create SSL_ENABLED -
+          printf "$CONEXAO_DE_SORTE_SSL_KEYSTORE_PATH" | docker secret create SSL_KEYSTORE_PATH -
+          printf "$CONEXAO_DE_SORTE_SSL_KEYSTORE_PASSWORD" | docker secret create SSL_KEYSTORE_PASSWORD -
+          printf "$CONEXAO_DE_SORTE_ENCRYPTION_MASTER_KEY" | docker secret create ENCRYPTION_MASTER_KEY -
+          printf "$CONEXAO_DE_SORTE_ENCRYPTION_MASTER_PASSWORD" | docker secret create ENCRYPTION_MASTER_PASSWORD -
+          printf "$CONEXAO_DE_SORTE_ENCRYPTION_BACKUP_KEY" | docker secret create ENCRYPTION_BACKUP_KEY -
+          printf "$CONEXAO_DE_SORTE_SERVER_PORT" | docker secret create SERVER_PORT -
           echo "Docker secrets created."
 
       - name: 🔍 Preparar ambiente de deploy
         run: |
           echo "🔍 Preparando ambiente para deploy do Chatbot..."
-
           # Verificar arquivos necessários
           echo "🔍 Verificando arquivos necessários..."
           for required_file in "docker-compose.yml"; do
@@ -251,13 +240,11 @@ jobs:
               exit 1
             fi
           done
-
           # Verificar/criar diretórios específicos do Chatbot
           required_dirs=(
             "logs"
             "config"
           )
-
           for required_dir in "${required_dirs[@]}"; do
             if [[ -d "$required_dir" ]]; then
               echo "✅ Diretório $required_dir existe"
@@ -266,14 +253,13 @@ jobs:
               mkdir -p "$required_dir"
             fi
           done
-
           # Verificar rede Docker Swarm
           echo "🔍 Verificando rede Docker Swarm..."
           if docker network ls | grep -q "${DOCKER_NETWORK_NAME}"; then
             echo "✅ Rede ${DOCKER_NETWORK_NAME} existe"
           else
             echo "❌ Rede ${DOCKER_NETWORK_NAME} não encontrada"
-            echo "💡 Criando rede overlay para Docker Swarm..."
+            echo "🔧 Criando rede overlay para Docker Swarm..."
             docker network create --driver overlay --attachable "${DOCKER_NETWORK_NAME}" || echo "⚠️ Rede já existe ou erro na criação"
           fi
 
