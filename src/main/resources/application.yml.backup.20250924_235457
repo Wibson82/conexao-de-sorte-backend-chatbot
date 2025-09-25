@@ -1,0 +1,308 @@
+# ===============================================================================
+# CHATBOT JOGO DO BICHO MICROSERVICE - BETTING SYSTEM CONFIGURATION  
+# ===============================================================================
+# Sistema reativo de apostas para Jogo do Bicho
+# Integração completa com JWT, R2DBC e WebFlux
+# Spring Boot 3.5.5 Compatible
+# ===============================================================================
+
+spring:
+  application:
+    name: conexao-de-sorte-chatbot
+  
+  profiles:
+    # Somente perfil "production" conforme diretriz
+    default: production
+    active: production
+  
+  # Config import para Azure Key Vault secrets
+  config:
+    import:
+      - optional:configtree:/run/secrets/
+      - optional:configtree:/etc/secrets/azure/
+      - optional:configtree:/mnt/secrets/
+      - optional:file:./secrets.properties
+      
+  # Azure Key Vault (padrão simplificado)
+  cloud:
+    azure:
+      keyvault:
+        secret:
+          enabled: ${AZURE_KEYVAULT_ENABLED:false}
+          endpoint: ${AZURE_KEYVAULT_ENDPOINT:}
+      profile:
+        tenant-id: ${AZURE_TENANT_ID:}
+        subscription-id: ${AZURE_SUBSCRIPTION_ID:}
+        client-id: ${AZURE_CLIENT_ID:}
+      
+  # Jackson configuration para Spring Boot 3.5.5
+  jackson:
+    time-zone: America/Sao_Paulo
+    locale: pt_BR
+    default-property-inclusion: non_null
+    date-format: yyyy-MM-dd'T'HH:mm:ss.SSSXXX
+    serialization:
+      write-dates-as-timestamps: false
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
+      
+  # R2DBC Database configuration for reactive betting system
+  r2dbc:
+    # Padrão concatenação: secret base + parâmetros específicos
+    url: ${conexao-de-sorte-database-r2dbc-url:r2dbc:mysql://conexao-mysql:3306}/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false&serverTimezone=America/Sao_Paulo
+    username: ${conexao-de-sorte-database-username:conexao_user}
+    password: ${conexao-de-sorte-database-password:conexao_password}
+    pool:
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
+      validation-query: "SELECT 1"
+      max-acquire-time: 5s
+      max-create-connection-time: 30s
+      max-life-time: 60m
+      
+  # Flyway for migrations (MySQL via JDBC)
+  flyway:
+    enabled: true
+    # createDatabaseIfNotExist=true permite criar o banco automaticamente
+    url: ${conexao-de-sorte-database-jdbc-url}/conexao_sorte_chatbot?useSSL=true&allowPublicKeyRetrieval=false&serverTimezone=America/Sao_Paulo&createDatabaseIfNotExist=true
+    user: ${conexao-de-sorte-database-username}
+    password: ${conexao-de-sorte-database-password}
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: false
+    sql-migration-suffixes: .sql
+    baseline-version: 1
+    
+  # Redis for betting sessions and cache
+  data:
+    redis:
+      host: ${conexao-de-sorte-redis-host:conexao-redis}
+      port: ${conexao-de-sorte-redis-port:6379}
+      password: ${conexao-de-sorte-redis-password:}
+      database: ${conexao-de-sorte-redis-database:5}  # DB 5 para chatbot
+      timeout: 5s
+      connect-timeout: 10s
+      lettuce:
+        pool:
+          max-active: 15
+          max-idle: 6
+          min-idle: 2
+          max-wait: -1ms
+    
+  # Security JWT for token validation (Spring Boot 3.5.5)
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWT_JWKS_URI:https://auth.conexaodesorte.com.br/realms/conexao-de-sorte/protocol/openid-connect/certs}
+          issuer-uri: ${JWT_ISSUER:https://auth.conexaodesorte.com.br/realms/conexao-de-sorte}
+          audiences: ${JWT_AUDIENCE:conexao-de-sorte}
+          
+  # WebFlux configuration (Spring Boot 3.5.5)
+  webflux:
+    base-path: /rest/v1/jogo-bicho
+    multipart:
+      max-in-memory-size: 1MB
+      max-disk-usage-per-part: 10MB
+
+# Server configuration (Spring Boot 3.5.5)
+server:
+  port: ${SERVER_PORT:8087}
+  shutdown: graceful
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+  netty:
+    connection-timeout: 20s
+    h2c-max-content-length: 0B
+    initial-buffer-size: 128B
+    max-initial-line-length: 4096B
+    validate-headers: true
+  
+  # SSL/TLS Configuration (Spring Boot 3.5.5)
+  ssl:
+    enabled: ${SSL_ENABLED:false}
+    key-store: ${SSL_KEYSTORE_PATH:}
+    key-store-password: ${conexao-de-sorte-ssl-keystore-password:}
+    key-store-type: PKCS12
+    protocol: TLS
+    enabled-protocols: [TLSv1.2, TLSv1.3]
+
+# Jogo do Bicho specific configuration
+jogo-bicho:
+  # Betting system configuration
+  apostas:
+    valor-minimo: ${APOSTAS_VALOR_MINIMO:1.00}
+    valor-maximo: ${APOSTAS_VALOR_MAXIMO:1000.00}
+    limite-diario-usuario: ${APOSTAS_LIMITE_DIARIO:5000.00}
+    horarios-permitidos:
+      - "08:00"  # Matinal
+      - "11:00"  # Vespertino  
+      - "14:00"  # Tarde
+      - "18:00"  # Noturno
+      - "21:00"  # Especial
+    
+  # Game rules configuration
+  regras:
+    grupos:
+      total: 25  # Grupos de 01 a 25
+      animais-por-grupo: 4
+    
+    dezenas:
+      minima: 00
+      maxima: 99
+      
+    centenas:
+      minima: 000
+      maxima: 999
+      
+    milhares:
+      minima: 0000
+      maxima: 9999
+  
+  # Payout configuration
+  premiacao:
+    grupo: ${PREMIO_GRUPO:18.0}  # 18x o valor apostado
+    dezena: ${PREMIO_DEZENA:60.0}  # 60x o valor apostado
+    centena: ${PREMIO_CENTENA:600.0}  # 600x o valor apostado
+    milhar: ${PREMIO_MILHAR:4000.0}  # 4000x o valor apostado
+    duque: ${PREMIO_DUQUE:300.0}
+    terno: ${PREMIO_TERNO:6000.0}
+    quadra: ${PREMIO_QUADRA:50000.0}
+    quina: ${PREMIO_QUINA:120000.0}
+  
+  # Session management
+  sessao:
+    timeout: ${SESSAO_TIMEOUT:900s}  # 15 minutos
+    max-apostas-simultaneas: ${MAX_APOSTAS_SIMULTANEAS:10}
+    
+  # Security settings for betting
+  seguranca:
+    validacao-integridade: ${VALIDACAO_INTEGRIDADE:true}
+    auditoria-apostas: ${AUDITORIA_APOSTAS:true}
+    limite-tentativas-falhas: ${LIMITE_TENTATIVAS:5}
+    bloqueio-temporario: ${BLOQUEIO_TEMPORARIO:300s}  # 5 minutos
+
+# Security headers (máxima proteção para sistema de apostas)
+security:
+  headers:
+    content-security-policy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    x-content-type-options: nosniff
+    x-frame-options: DENY
+    x-xss-protection: "1; mode=block"
+    strict-transport-security: "max-age=31536000; includeSubDomains; preload"
+    referrer-policy: "strict-origin-when-cross-origin"
+
+# CORS Configuration (restritivo para apostas)
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://apostas.conexaodesorte.com,https://admin.conexaodesorte.com}
+  allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
+  allowed-headers: ${CORS_ALLOWED_HEADERS:Authorization,Content-Type,X-Requested-With,Accept,Origin}
+  allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+  max-age: ${CORS_MAX_AGE:1800}
+
+# Rate Limiting (rigoroso para apostas)
+rate-limit:
+  enabled: ${RATE_LIMIT_ENABLED:true}
+  default-requests-per-minute: ${RATE_LIMIT_DEFAULT:30}  # Baixo limite para apostas
+  endpoints:
+    "/rest/v1/jogo-bicho/apostas":
+      requests-per-minute: ${RATE_LIMIT_APOSTAS:10}
+      burst-capacity: ${RATE_LIMIT_APOSTAS_BURST:15}
+    "/rest/v1/jogo-bicho/resultados":
+      requests-per-minute: ${RATE_LIMIT_RESULTADOS:60}
+      burst-capacity: ${RATE_LIMIT_RESULTADOS_BURST:100}
+
+# Actuator configuration (Spring Boot 3.5.5)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_INCLUDE:health,info,metrics,prometheus}
+      base-path: /actuator
+      cors:
+        allowed-origins: ${MANAGEMENT_CORS_ORIGINS:https://admin.conexaodesorte.com}
+        allowed-methods: GET
+        
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_HEALTH_SHOW_DETAILS:when-authorized}
+      show-components: ${MANAGEMENT_HEALTH_SHOW_COMPONENTS:when-authorized}
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db,redis
+        liveness:
+          include: livenessState,ping
+          
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+        
+  metrics:
+    tags:
+      service: conexao-de-sorte-chatbot
+      environment: ${SPRING_PROFILES_ACTIVE:production}
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+      percentiles:
+        "[http.server.requests]": 0.5, 0.95, 0.99
+      slo:
+        "[http.server.requests]": 10ms, 50ms, 100ms, 200ms, 500ms
+        
+  # Prometheus configuration (Spring Boot 3.5.5)
+  prometheus:
+    metrics:
+      export:
+        enabled: ${MANAGEMENT_PROMETHEUS_ENABLED:true}
+
+# Logging configuration (Spring Boot 3.5.5)
+logging:
+  level:
+    root: ${LOGGING_LEVEL_ROOT:INFO}
+    "[br.tec.facilitaservicos.chatbot]": ${LOGGING_LEVEL_APP:INFO}
+    "[org.springframework.security]": ${LOGGING_LEVEL_SECURITY:INFO}
+    "[org.springframework.r2dbc]": ${LOGGING_LEVEL_R2DBC:INFO}
+    "[org.springframework.web.reactive]": ${LOGGING_LEVEL_WEBFLUX:INFO}
+    "[org.springframework.data.redis]": ${LOGGING_LEVEL_REDIS:INFO}
+    
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%t] %-40.40logger{39} [%X{traceId:-},%X{spanId:-}] : %m%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%t] %-40.40logger{39} [%X{traceId:-},%X{spanId:-}] [%X{apostaId:-}] [%X{usuario:-}] : %m%n"
+    
+  file:
+    name: ${LOGGING_FILE_NAME:./logs/conexao-de-sorte-chatbot.log}
+    
+  logback:
+    rollingpolicy:
+      max-file-size: ${LOGGING_LOGBACK_MAX_FILE_SIZE:100MB}
+      max-history: ${LOGGING_LOGBACK_MAX_HISTORY:90}
+      total-size-cap: ${LOGGING_LOGBACK_TOTAL_SIZE_CAP:1GB}
+
+# OpenAPI Documentation (Spring Boot 3.5.5)
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_API_DOCS_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SPRINGDOC_SWAGGER_UI_ENABLED:false}
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+    urls-primary-name: conexao-de-sorte-chatbot
+  show-actuator: ${SPRINGDOC_SHOW_ACTUATOR:false}
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+
+  production:
+    validacao-integridade: true
+    auditoria-apostas: true
+    rate-limit-producao: 15
+    log-level: INFO
